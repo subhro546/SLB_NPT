@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'AED' | 'SAR';
 
 export interface NPTRecord {
-  Borehole: string;
+  Section: string;
   Well: string;
   FieldName: string;
   NPTCategory: string;
@@ -35,7 +35,7 @@ export interface Dataset {
 }
 
 export interface GlobalFilters {
-  boreholes: string[];
+  sections: string[];
   wells: string[];
   fields: string[];
   categories: string[];
@@ -63,7 +63,7 @@ interface AppState {
 }
 
 const initialFilters: GlobalFilters = {
-  boreholes: [],
+  sections: [],
   wells: [],
   fields: [],
   categories: [],

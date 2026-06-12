@@ -28,7 +28,7 @@ export function GlobalFilters() {
   const records = activeDataset.records
 
   // Extract unique values for filters
-  const uniqueBoreholes = Array.from(new Set(records.map(r => r.Borehole))).sort()
+  const uniqueSections = Array.from(new Set(records.map(r => r.Section))).sort()
   const uniqueWells = Array.from(new Set(records.map(r => r.Well))).sort()
   const uniqueFields = Array.from(new Set(records.map(r => r.FieldName))).sort()
   const uniqueCategories = Array.from(new Set(records.map(r => r.NPTCategory))).sort()
@@ -50,15 +50,15 @@ export function GlobalFilters() {
 
       <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
         <Select 
-          value={globalFilters.boreholes[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ boreholes: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.sections?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ sections: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="w-[160px] h-8 text-xs">
-            <SelectValue placeholder="All Boreholes" />
+            <SelectValue placeholder="All Sections" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Boreholes</SelectItem>
-            {uniqueBoreholes.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+            <SelectItem value="all">All Sections</SelectItem>
+            {uniqueSections.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
 

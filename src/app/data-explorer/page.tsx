@@ -49,6 +49,7 @@ export default function DataExplorer() {
 
   const columns: ColumnDef<NPTRecord>[] = [
     { accessorKey: "Well", header: "Well" },
+    { accessorKey: "Section", header: "Section" },
     { accessorKey: "FieldName", header: "Field Name" },
     { accessorKey: "NPTCategory", header: "Category" },
     { accessorKey: "NPTSubCategory", header: "Sub Category" },

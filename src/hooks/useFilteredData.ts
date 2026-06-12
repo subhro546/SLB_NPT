@@ -12,8 +12,8 @@ export function useFilteredData(): NPTRecord[] {
     if (!activeDataset) return []
 
     return activeDataset.records.filter(record => {
-      // Borehole Filter
-      if (globalFilters.boreholes.length > 0 && !globalFilters.boreholes.includes(record.Borehole)) {
+      // Section Filter
+      if ((globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(record.Section)) {
         return false
       }
       // Well Filter

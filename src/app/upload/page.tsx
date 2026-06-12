@@ -51,7 +51,7 @@ export default function UploadPage() {
           }
 
           return {
-            Borehole: String(row['Borehole'] || 'Unknown'),
+            Section: String(row['Section'] || 'Unknown'),
             Well: String(row['Well'] || 'Unknown'),
             FieldName: String(row['Field Name'] || row['FieldName'] || 'Unknown'),
             NPTCategory: normalizedCat,

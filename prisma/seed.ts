@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import * as XLSX from 'xlsx'
 import * as path from 'path'
+import { normalizeCategory } from '../src/lib/normalize'
 
 const prisma = new PrismaClient()
 
@@ -26,6 +27,9 @@ function excelDateToJSDate(serial: number): Date {
 }
 
 async function main() {
+  console.log('Clearing existing records...');
+  await prisma.nPTRecord.deleteMany({});
+  
   console.log('Seeding database from Excel file...');
   
   const filePath = path.resolve('/Users/subhro/RTDMMA/NPT dummy data - RTDMMA ONGC (2).xlsx')
@@ -35,6 +39,8 @@ async function main() {
   const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
 
   console.log(`Found ${rawData.length} records to process.`)
+
+  const recordsToInsert = [];
 
   for (const row of rawData) {
     // Parse Dates (handling Excel serial numbers)
@@ -69,28 +75,32 @@ async function main() {
     const costImpact = hours * (HOURLY_RIG_RATE + AVG_SPREAD_COST_RATE);
     const costSaved = timeSavedHours * (HOURLY_RIG_RATE + AVG_SPREAD_COST_RATE);
 
-    await prisma.nPTRecord.create({
-      data: {
-        borehole: String(row['Borehole'] || ''),
-        motherBorehole: row['Mother Borehole Name'] ? String(row['Mother Borehole Name']) : null,
-        fieldName: String(row['Field Name'] || ''),
-        spudDate: spudDate && !isNaN(spudDate.getTime()) ? spudDate : null,
-        section: row['Section'] ? String(row['Section']) : null,
-        startDate: isNaN(startDate.getTime()) ? new Date() : startDate,
-        endDate: isNaN(endDate.getTime()) ? new Date() : endDate,
-        hours: hours,
-        days: Number(row['Days']) || 0,
-        code: String(row['Code'] || ''),
-        subCode: row['Sub Code'] ? String(row['Sub Code']) : null,
-        responsible: String(row['Responsible'] || ''),
-        description: row['Description'] ? String(row['Description']) : null,
-        timeSavedDays: Number(row['Time Saved (Days)']) || 0,
-        timeSavedHours: timeSavedHours,
-        costImpact: costImpact,
-        costSaved: costSaved
-      }
-    })
+    recordsToInsert.push({
+      borehole: String(row['Borehole'] || ''),
+      motherBorehole: row['Mother Borehole Name'] ? String(row['Mother Borehole Name']) : null,
+      fieldName: String(row['Field Name'] || ''),
+      spudDate: spudDate && !isNaN(spudDate.getTime()) ? spudDate : null,
+      section: row['Section'] ? String(row['Section']) : null,
+      startDate: isNaN(startDate.getTime()) ? new Date() : startDate,
+      endDate: isNaN(endDate.getTime()) ? new Date() : endDate,
+      hours: hours,
+      days: Number(row['Days']) || 0,
+      code: normalizeCategory(String(row['Code'] || '')), // Using code for Category
+      subCode: row['Sub Code'] ? normalizeCategory(String(row['Sub Code'])) : null, // Using subCode for SubCategory
+      responsible: normalizeCategory(String(row['Responsible'] || '')),
+      description: row['Description'] ? String(row['Description']) : null,
+      timeSavedDays: Number(row['Time Saved (Days)']) || 0,
+      timeSavedHours: timeSavedHours,
+      costImpact: costImpact,
+      costSaved: costSaved
+    });
   }
+
+  // Bulk insert to prevent database connection throttling/timeouts on cloud providers
+  await prisma.nPTRecord.createMany({
+    data: recordsToInsert,
+    skipDuplicates: true,
+  });
 
   console.log('Seeding completed successfully.')
 }

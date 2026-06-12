@@ -13,12 +13,11 @@ export async function GET() {
 
     // Map Prisma records back to the interface expected by the frontend's NPTRecord
     const mappedRecords = records.map(r => ({
-      Borehole: r.borehole,
+      Section: r.section || "",
       Well: r.borehole, // In original logic Well and Borehole were mapped the same, adjust if needed
       MotherBoreholeName: r.motherBorehole || "",
       FieldName: r.fieldName,
       SpudDate: r.spudDate ? r.spudDate.toISOString() : "",
-      Section: r.section || "",
       StartDate: r.startDate.toISOString(),
       EndDate: r.endDate.toISOString(),
       NPTHours: r.hours,
