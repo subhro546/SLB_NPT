@@ -34,10 +34,8 @@ export function Topbar() {
       <div className="flex items-center gap-4">
         {/* Mobile Menu */}
         <Sheet>
-          <SheetTrigger asChild>
-            <button className="md:hidden p-2 -ml-2 rounded-md hover:bg-muted text-muted-foreground">
-              <Menu className="h-5 w-5" />
-            </button>
+          <SheetTrigger className="md:hidden p-2 -ml-2 rounded-md hover:bg-muted text-muted-foreground">
+            <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
