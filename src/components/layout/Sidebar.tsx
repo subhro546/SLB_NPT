@@ -15,7 +15,7 @@ import {
   Upload
 } from "lucide-react"
 
-const navigation = [
+export const navigation = [
   { name: 'Command Center', href: '/', icon: LayoutDashboard },
   { name: 'Advanced Analytics', href: '/advanced-analytics', icon: LineChart },
   { name: 'Well Analytics', href: '/well-analytics', icon: Activity },
@@ -30,7 +30,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-background">
+    <div className="hidden md:flex h-full w-64 shrink-0 flex-col border-r bg-background">
       <div className="flex h-16 shrink-0 items-center px-6 border-b">
         <div className="flex items-center gap-2">
           <div className="bg-primary p-1.5 rounded-md">
