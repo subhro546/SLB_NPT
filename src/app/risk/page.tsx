@@ -47,15 +47,34 @@ export default function RiskAnalysis() {
     return acc;
   }, {} as Record<string, { count: number, totalCost: number, totalHours: number }>);
 
-  const rawRiskData = Object.entries(categoryStats).map(([cat, stats]) => {
+  const rawRiskDataIntermediate = Object.entries(categoryStats).map(([cat, stats]) => {
     const avgCost = stats.count > 0 ? stats.totalCost / stats.count : 0;
-    const riskScore = stats.count * avgCost; // Frequency x Average Cost
     return {
       category: cat,
       frequency: stats.count,
       avgCost: avgCost,
       totalHours: stats.totalHours,
-      riskScore: riskScore
+    };
+  });
+
+  const maxFreq = Math.max(...rawRiskDataIntermediate.map(d => d.frequency), 1);
+  const minFreq = Math.min(...rawRiskDataIntermediate.map(d => d.frequency), 0);
+  const maxAvgCost = Math.max(...rawRiskDataIntermediate.map(d => d.avgCost), 1);
+  const minAvgCost = Math.min(...rawRiskDataIntermediate.map(d => d.avgCost), 0);
+  const maxHours = Math.max(...rawRiskDataIntermediate.map(d => d.totalHours), 1);
+  const minHours = Math.min(...rawRiskDataIntermediate.map(d => d.totalHours), 0);
+
+  const rawRiskData = rawRiskDataIntermediate.map(item => {
+    const normFreq = maxFreq > minFreq ? (item.frequency - minFreq) / (maxFreq - minFreq) : 0;
+    const normAvgCost = maxAvgCost > minAvgCost ? (item.avgCost - minAvgCost) / (maxAvgCost - minAvgCost) : 0;
+    const normHours = maxHours > minHours ? (item.totalHours - minHours) / (maxHours - minHours) : 0;
+
+    // 0-100 scale index
+    const riskScore = (normAvgCost * 40) + (normFreq * 40) + (normHours * 20);
+
+    return {
+      ...item,
+      riskScore: Number(riskScore.toFixed(1))
     };
   });
 
@@ -93,18 +112,44 @@ export default function RiskAnalysis() {
     if (isNaN(date.getTime())) return acc;
     const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
-    if (!acc[month]) acc[month] = { month, count: 0, totalCost: 0 };
+    if (!acc[month]) acc[month] = { month, count: 0, totalCost: 0, totalHours: 0 };
     acc[month].count += 1;
     acc[month].totalCost += curr.CostImpact;
+    acc[month].totalHours += curr.NPTHours || 0;
     return acc;
-  }, {} as Record<string, { month: string, count: number, totalCost: number }>);
+  }, {} as Record<string, { month: string, count: number, totalCost: number, totalHours: number }>);
 
-  const riskTrendData = Object.values(monthlyDataMap)
+  const monthlyStatsIntermediate = Object.values(monthlyDataMap)
     .sort((a: any, b: any) => a.month.localeCompare(b.month))
-    .map(m => ({
+    .map(m => {
+      const avgCost = m.count > 0 ? m.totalCost / m.count : 0;
+      return {
+        month: m.month,
+        frequency: m.count,
+        avgCost: avgCost,
+        totalHours: m.totalHours,
+      };
+    });
+
+  const maxMonthFreq = Math.max(...monthlyStatsIntermediate.map(m => m.frequency), 1);
+  const minMonthFreq = Math.min(...monthlyStatsIntermediate.map(m => m.frequency), 0);
+  const maxMonthAvgCost = Math.max(...monthlyStatsIntermediate.map(m => m.avgCost), 1);
+  const minMonthAvgCost = Math.min(...monthlyStatsIntermediate.map(m => m.avgCost), 0);
+  const maxMonthHours = Math.max(...monthlyStatsIntermediate.map(m => m.totalHours), 1);
+  const minMonthHours = Math.min(...monthlyStatsIntermediate.map(m => m.totalHours), 0);
+
+  const riskTrendData = monthlyStatsIntermediate.map(m => {
+    const normFreq = maxMonthFreq > minMonthFreq ? (m.frequency - minMonthFreq) / (maxMonthFreq - minMonthFreq) : 0;
+    const normAvgCost = maxMonthAvgCost > minMonthAvgCost ? (m.avgCost - minMonthAvgCost) / (maxMonthAvgCost - minMonthAvgCost) : 0;
+    const normHours = maxMonthHours > minMonthHours ? (m.totalHours - minMonthHours) / (maxMonthHours - minMonthHours) : 0;
+    
+    const riskScore = (normAvgCost * 40) + (normFreq * 40) + (normHours * 20);
+
+    return {
       month: m.month,
-      RiskScore: m.count * (m.count > 0 ? m.totalCost / m.count : 0)
-    }));
+      RiskScore: Number(riskScore.toFixed(1))
+    };
+  });
 
   // Fastest Growing Risk (Compare last month to previous month)
   let fastestGrowingRisk = 'Insufficient Data';
@@ -164,7 +209,7 @@ export default function RiskAnalysis() {
               <p className="text-sm text-muted-foreground font-medium">Highest Risk Category</p>
             </div>
             <h3 className="text-lg font-bold truncate" title={highestRisk?.category}>{highestRisk?.category || 'N/A'}</h3>
-            <p className="text-xs font-semibold text-destructive mt-1">Score: {formatCurrency(highestRisk?.riskScore || 0, true)}</p>
+            <p className="text-xs font-semibold text-destructive mt-1">Score: {(highestRisk?.riskScore || 0).toFixed(1)} / 100</p>
           </CardContent>
         </Card>
 
@@ -220,10 +265,10 @@ export default function RiskAnalysis() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskDistributionData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
+                <XAxis type="number" tickFormatter={(v) => v.toFixed(0)} tick={{ fontSize: 11 }} domain={[0, 100]} />
                 <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} />
                 <RechartsTooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value: any) => Number(value).toFixed(1)}
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
@@ -276,9 +321,9 @@ export default function RiskAnalysis() {
               <LineChart data={riskTrendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 10 }} width={60} />
+                <YAxis tickFormatter={(v) => v.toFixed(0)} tick={{ fontSize: 10 }} width={40} domain={[0, 100]} />
                 <RechartsTooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value: any) => Number(value).toFixed(1)}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 <Line type="monotone" dataKey="RiskScore" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Risk Score" />
@@ -295,7 +340,7 @@ export default function RiskAnalysis() {
             Top 10 Risk Priority List
           </CardTitle>
           <CardDescription>
-            Risk Score is calculated as <strong className="text-foreground">Frequency × Average Cost Impact</strong>. Higher scores indicate categories requiring immediate operational intervention.
+            Risk Score is a <strong className="text-foreground">0-100 normalized index</strong> combining Average Cost, Frequency, and NPT Hours. Higher scores indicate categories requiring immediate operational intervention.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -331,7 +376,7 @@ export default function RiskAnalysis() {
                     <td className="px-4 py-3 text-right">{row.totalHours.toFixed(1)}h</td>
                     <td className="px-4 py-3 text-right">{row.frequency}</td>
                     <td className="px-4 py-3 text-right font-medium">{formatCurrency(row.avgCost)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-destructive bg-destructive/5">{formatCurrency(row.riskScore, true)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-destructive bg-destructive/5">{row.riskScore.toFixed(1)}</td>
                   </tr>
                 ))}
                 {sortedData.length === 0 && (
