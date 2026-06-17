@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { useAppStore } from "@/store/useAppStore"
-import { isActionableCategory } from "@/lib/constants"
+import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { 
