@@ -77,10 +77,10 @@ export function Topbar() {
       </div>
       
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 border-r pr-4 mr-2 border-primary-foreground/20 hidden sm:flex">
-          <span className="text-sm text-primary-foreground/90 font-medium whitespace-nowrap">Savings Calc:</span>
+        <div className="flex items-center gap-2 border-r pr-2 mr-1 sm:pr-4 sm:mr-2 border-primary-foreground/20">
+          <span className="text-sm text-primary-foreground/90 font-medium whitespace-nowrap hidden lg:block">Savings Calc:</span>
           <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
-            <SelectTrigger className="w-[150px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10">
+            <SelectTrigger className="w-[100px] sm:w-[150px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 text-xs sm:text-sm">
               <SelectValue placeholder="Method" />
             </SelectTrigger>
             <SelectContent>
@@ -91,9 +91,8 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary-foreground/90" />
           <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
-            <SelectTrigger className="w-[120px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10">
+            <SelectTrigger className="w-[70px] sm:w-[120px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 text-xs sm:text-sm">
               <SelectValue placeholder="Currency" />
             </SelectTrigger>
             <SelectContent>
@@ -106,7 +105,7 @@ export function Topbar() {
           </Select>
         </div>
 
-        <div className="hidden sm:flex border-l pl-4 ml-2 border-primary-foreground/20">
+        <div className="flex border-l pl-2 ml-1 sm:pl-4 sm:ml-2 border-primary-foreground/20">
           <PrintDialog />
         </div>
 
