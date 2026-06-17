@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { useAppStore } from "@/store/useAppStore"
+import { isActionableCategory } from "@/lib/constants"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { 
@@ -179,6 +180,9 @@ export default function RootCauseAnalysis() {
             )}
             <span className={level === 'Event' ? 'text-muted-foreground text-sm font-normal' : ''}>
               {getValue<string>()}
+              {level === 'Category' && isActionableCategory(getValue<string>()) && (
+                <span className="ml-2 text-emerald-500 text-xs" title="Savable Category">🟢</span>
+              )}
             </span>
           </div>
         )

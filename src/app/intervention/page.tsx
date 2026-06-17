@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useAppStore } from "@/store/useAppStore"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line
+  LineChart, Line, Legend
 } from 'recharts'
+import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 import { FileSpreadsheet, Trophy, Target, Award } from "lucide-react"
 import Link from "next/link"
 
@@ -35,14 +36,16 @@ export default function InterventionIntelligence() {
 
   // Data Aggregations
   const categorySavings = data.reduce((acc, curr) => {
-    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, TimeSaved: 0, CostSaved: 0 }
+    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, TimeSaved: 0, CostSaved: 0, CostImpact: 0 }
     acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours
     acc[curr.NPTCategory].CostSaved += curr.CostSaved
+    acc[curr.NPTCategory].CostImpact += curr.CostImpact
     return acc
-  }, {} as Record<string, { name: string, TimeSaved: number, CostSaved: number }>)
+  }, {} as Record<string, { name: string, TimeSaved: number, CostSaved: number, CostImpact: number }>)
 
   const categorySavingsData = Object.values(categorySavings)
-    .sort((a, b) => b.CostSaved - a.CostSaved)
+    .filter(cat => isActionableCategory(cat.name)) // Only show actionable categories
+    .sort((a, b) => b.CostImpact - a.CostImpact) // Sort by impact
     .slice(0, 10)
 
   const wellSavings = data.reduce((acc, curr) => {
@@ -170,13 +173,15 @@ export default function InterventionIntelligence() {
               <BarChart data={categorySavingsData} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} />
-                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10 }} />
+                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
-                <Bar dataKey="CostSaved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="CostImpact" name="Cost Impact" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="CostSaved" name="Cost Saved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

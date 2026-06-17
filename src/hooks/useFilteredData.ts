@@ -1,5 +1,6 @@
 import { useAppStore, NPTRecord } from "@/store/useAppStore"
 import { useMemo } from "react"
+import { isActionableCategory } from "@/lib/constants"
 
 export function useFilteredData(): NPTRecord[] {
   const { datasets, activeDatasetId, globalFilters } = useAppStore()
@@ -51,8 +52,7 @@ export function useFilteredData(): NPTRecord[] {
 
       return true
     }).map(record => {
-      const actionableCategories = ['Hole Problems', 'Fishing', 'Side Tracking', 'Out of Cycle']
-      if (!actionableCategories.includes(record.NPTCategory)) {
+      if (!isActionableCategory(record.NPTCategory)) {
         return {
           ...record,
           TimeSavedHours: 0,

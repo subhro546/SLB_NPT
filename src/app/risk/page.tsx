@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { useAppStore } from "@/store/useAppStore"
@@ -208,7 +209,7 @@ export default function RiskAnalysis() {
               </div>
               <p className="text-sm text-muted-foreground font-medium">Highest Risk Category</p>
             </div>
-            <h3 className="text-lg font-bold truncate" title={highestRisk?.category}>{highestRisk?.category || 'N/A'}</h3>
+            <h3 className="text-lg font-bold truncate" title={highestRisk?.category}>{formatActionableCategory(highestRisk?.category || '') || 'N/A'}</h3>
             <p className="text-xs font-semibold text-destructive mt-1">Score: {(highestRisk?.riskScore || 0).toFixed(1)} / 100</p>
           </CardContent>
         </Card>
@@ -221,7 +222,7 @@ export default function RiskAnalysis() {
               </div>
               <p className="text-sm text-muted-foreground font-medium">Fastest Growing Risk</p>
             </div>
-            <h3 className="text-lg font-bold truncate" title={fastestGrowingRisk}>{fastestGrowingRisk}</h3>
+            <h3 className="text-lg font-bold truncate" title={fastestGrowingRisk}>{formatActionableCategory(fastestGrowingRisk) || 'N/A'}</h3>
             <p className="text-xs font-semibold text-orange-600 mt-1">Based on recent month volume</p>
           </CardContent>
         </Card>
@@ -234,7 +235,7 @@ export default function RiskAnalysis() {
               </div>
               <p className="text-sm text-muted-foreground font-medium">Highest Cost Event Category</p>
             </div>
-            <h3 className="text-lg font-bold truncate" title={highestAvgCost?.category}>{highestAvgCost?.category || 'N/A'}</h3>
+            <h3 className="text-lg font-bold truncate" title={highestAvgCost?.category}>{formatActionableCategory(highestAvgCost?.category || '') || 'N/A'}</h3>
             <p className="text-xs font-semibold text-blue-600 mt-1">{formatCurrency(highestAvgCost?.avgCost || 0, true)} avg cost</p>
           </CardContent>
         </Card>
@@ -247,7 +248,7 @@ export default function RiskAnalysis() {
               </div>
               <p className="text-sm text-muted-foreground font-medium">Most Frequent Category</p>
             </div>
-            <h3 className="text-lg font-bold truncate" title={mostFrequent?.category}>{mostFrequent?.category || 'N/A'}</h3>
+            <h3 className="text-lg font-bold truncate" title={mostFrequent?.category}>{formatActionableCategory(mostFrequent?.category || '') || 'N/A'}</h3>
             <p className="text-xs font-semibold text-emerald-600 mt-1">{mostFrequent?.frequency || 0} occurrences</p>
           </CardContent>
         </Card>
@@ -266,7 +267,7 @@ export default function RiskAnalysis() {
               <BarChart data={riskDistributionData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => v.toFixed(0)} tick={{ fontSize: 11 }} domain={[0, 100]} />
-                <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <RechartsTooltip 
                   formatter={(value: any) => Number(value).toFixed(1)}
                   cursor={{fill: 'var(--color-muted)'}}
@@ -372,7 +373,10 @@ export default function RiskAnalysis() {
                 {sortedData.slice(0, 10).map((row) => (
                   <tr key={row.category} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-semibold text-muted-foreground">{row.rank}</td>
-                    <td className="px-4 py-3 font-medium">{row.category}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {row.category}
+                      {isActionableCategory(row.category) && <span className="ml-2 text-emerald-500" title="Savable Category">🟢</span>}
+                    </td>
                     <td className="px-4 py-3 text-right">{row.totalHours.toFixed(1)}h</td>
                     <td className="px-4 py-3 text-right">{row.frequency}</td>
                     <td className="px-4 py-3 text-right font-medium">{formatCurrency(row.avgCost)}</td>

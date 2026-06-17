@@ -7,6 +7,7 @@ import { useAppStore, NPTRecord } from "@/store/useAppStore"
 import { FileSpreadsheet, Download, Search, SlidersHorizontal } from "lucide-react"
 import Link from "next/link"
 import * as XLSX from "xlsx"
+import { isActionableCategory } from "@/lib/constants"
 
 import {
   ColumnDef,
@@ -51,7 +52,16 @@ export default function DataExplorer() {
     { accessorKey: "Well", header: "Well" },
     { accessorKey: "Section", header: "Section" },
     { accessorKey: "FieldName", header: "Field Name" },
-    { accessorKey: "NPTCategory", header: "Category" },
+    { 
+      accessorKey: "NPTCategory", 
+      header: "Category",
+      cell: ({ row }) => (
+        <span className="flex items-center gap-2">
+          {row.getValue("NPTCategory") as string}
+          {isActionableCategory(row.getValue("NPTCategory") as string) && <span className="text-emerald-500 text-xs" title="Savable Category">🟢</span>}
+        </span>
+      )
+    },
     { accessorKey: "NPTSubCategory", header: "Sub Category" },
     { accessorKey: "ResponsibleParty", header: "Responsible Party" },
     { 

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useMemo } from "react"
+import { formatActionableCategory } from "@/lib/constants"
 
 export function GlobalFilters() {
   const pathname = usePathname()
@@ -97,7 +98,7 @@ export function GlobalFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {uniqueCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {uniqueCategories.map(c => <SelectItem key={c} value={c}>{formatActionableCategory(c)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>

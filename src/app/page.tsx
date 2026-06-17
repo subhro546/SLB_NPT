@@ -11,6 +11,7 @@ import {
   LineChart, Line, ComposedChart, AreaChart, Area
 } from 'recharts'
 import { FileSpreadsheet, AlertTriangle, TrendingUp, TrendingDown, Clock, DollarSign, ChevronDown, ChevronUp } from "lucide-react"
+import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 
 export default function ExecutiveCommandCenter() {
   const data = useFilteredData()
@@ -286,7 +287,10 @@ export default function ExecutiveCommandCenter() {
               {displayedCategories.map((item, index) => (
                 <div key={item.cat} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold truncate pr-2" title={item.cat}>{index + 1}. {item.cat}</span>
+                    <span className="font-semibold truncate pr-2" title={item.cat}>
+                      {index + 1}. {item.cat}
+                      {isActionableCategory(item.cat) && <span className="ml-2 text-emerald-500 text-xs" title="Savable Category">🟢</span>}
+                    </span>
                     <span className="font-medium text-destructive whitespace-nowrap">{formatCurrency(item.cost, true)}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -386,7 +390,7 @@ export default function ExecutiveCommandCenter() {
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                 <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 10 }} width={60} />
                 <Tooltip 
-                  formatter={(value: any, name: any) => [formatCurrency(Number(value)), name.replace('cat_', '')]}
+                  formatter={(value: any, name: any) => [formatCurrency(Number(value)), formatActionableCategory(name.replace('cat_', ''))]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 {top5Cats.map((cat, i) => (
