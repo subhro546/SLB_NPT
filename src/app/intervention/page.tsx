@@ -169,7 +169,7 @@ export default function InterventionIntelligence() {
             <CardDescription>Financial impact recovered per category</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-             <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categorySavingsData} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} />
@@ -194,7 +194,7 @@ export default function InterventionIntelligence() {
           <CardDescription>Financial impact recovered over time</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />

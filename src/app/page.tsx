@@ -342,7 +342,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Primary financial baseline tracking overall NPT losses.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -363,7 +363,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Tracking raw volume of NPT occurrences decoupled from cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -384,7 +384,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions grouped by the Top 5 Categories over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -408,7 +408,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions attributed to Top 5 Responsible Parties over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -432,7 +432,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Historical trend for the #1 overall cost driver: <strong className="text-foreground">{topCostDriverName}</strong>.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -453,7 +453,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>% of NPT hours successfully recovered via intervention.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />

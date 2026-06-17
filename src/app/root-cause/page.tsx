@@ -326,7 +326,7 @@ export default function RootCauseAnalysis() {
             </select>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topCausesChartData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis 
@@ -353,7 +353,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Cost impact attribution across main categories</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stackedData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -379,7 +379,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Locations suffering the highest financial penalty</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topWells} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
