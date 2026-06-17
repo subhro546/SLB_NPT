@@ -9,6 +9,7 @@ import {
   BarChart, LineChart, PieChart, Pie, Cell, Legend, Scatter
 } from 'recharts'
 import { FileSpreadsheet, AlertCircle, Activity, Gauge, Focus } from "lucide-react"
+import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 
 const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-destructive)'];
 
@@ -255,7 +256,7 @@ export default function AdvancedAnalytics() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskGapData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="category" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={80} />
+                <XAxis dataKey="category" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={80} tickFormatter={formatActionableCategory} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <RechartsTooltip 
                   formatter={(value: any) => [`+${Number(value).toFixed(1)} hrs`, 'Risk Gap']}
@@ -290,10 +291,10 @@ export default function AdvancedAnalytics() {
                   ))}
                 </Pie>
                 <RechartsTooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value: any, name: any) => [formatCurrency(Number(value)), formatActionableCategory(name)]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px' }} />
+                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px' }} formatter={(value: any) => formatActionableCategory(value)} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -323,7 +324,10 @@ export default function AdvancedAnalytics() {
                 <tbody className="divide-y">
                   {percentileTableData.map((row) => (
                     <tr key={row.category} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-medium">{row.category}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {row.category}
+                        {isActionableCategory(row.category) && <span className="ml-2 text-emerald-500" title="Savable Category">🟢</span>}
+                      </td>
                       <td className="px-4 py-3 text-right text-emerald-600">{row.P10.toFixed(1)}h</td>
                       <td className="px-4 py-3 text-right text-primary font-medium">{row.P50.toFixed(1)}h</td>
                       <td className="px-4 py-3 text-right text-destructive font-bold">{row.P90.toFixed(1)}h</td>
@@ -352,7 +356,7 @@ export default function AdvancedAnalytics() {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={paretoData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="category" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <XAxis dataKey="category" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
                 <YAxis yAxisId="left" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v.toFixed(0)}%`} tick={{ fontSize: 11 }} domain={[0, 100]} />
                 <RechartsTooltip 
@@ -380,7 +384,7 @@ export default function AdvancedAnalytics() {
               <BarChart data={topCategoriesBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <RechartsTooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}

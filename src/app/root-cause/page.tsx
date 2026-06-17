@@ -334,7 +334,7 @@ export default function RootCauseAnalysis() {
                   tickFormatter={topCauseMetric === 'cost' ? (v) => formatCurrency(v, true) : undefined} 
                   tick={{ fontSize: 11 }} 
                 />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => topCauseMetric === 'cost' ? formatCurrency(Number(value)) : Number(value).toFixed(1)}
                   cursor={{fill: 'var(--color-muted)'}}
@@ -357,7 +357,7 @@ export default function RootCauseAnalysis() {
               <BarChart data={stackedData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
