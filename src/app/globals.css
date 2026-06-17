@@ -115,3 +115,33 @@
     @apply font-light tracking-tight;
   }
 }
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-page {
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  /* Disable animations and force static rendering for Recharts */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Hide scrollbars for printing */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { navigation } from "./Sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { PrintDialog } from "@/components/PrintDialog"
 
 export function Topbar() {
   const pathname = usePathname()
@@ -79,7 +80,7 @@ export function Topbar() {
         <div className="flex items-center gap-2 border-r pr-4 mr-2 border-primary-foreground/20 hidden sm:flex">
           <span className="text-sm text-primary-foreground/90 font-medium whitespace-nowrap">Savings Calc:</span>
           <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
-            <SelectTrigger className="w-[150px] h-9">
+            <SelectTrigger className="w-[150px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10">
               <SelectValue placeholder="Method" />
             </SelectTrigger>
             <SelectContent>
@@ -92,7 +93,7 @@ export function Topbar() {
         <div className="flex items-center gap-2">
           <DollarSign className="h-4 w-4 text-primary-foreground/90" />
           <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
-            <SelectTrigger className="w-[120px] h-9">
+            <SelectTrigger className="w-[120px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10">
               <SelectValue placeholder="Currency" />
             </SelectTrigger>
             <SelectContent>
@@ -103,6 +104,10 @@ export function Topbar() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="hidden sm:flex border-l pl-4 ml-2 border-primary-foreground/20">
+          <PrintDialog />
         </div>
 
         <button

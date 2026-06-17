@@ -5,13 +5,19 @@ import { Sidebar } from "./Sidebar"
 import { Topbar } from "./Topbar"
 import { GlobalFilters } from "./GlobalFilters"
 import { useAppStore } from "@/store/useAppStore"
+import { usePathname } from "next/navigation"
 
 export function GlobalLayout({ children }: { children: React.ReactNode }) {
   const { fetchDatabaseRecords, isLoadingDatabase } = useAppStore()
+  const pathname = usePathname()
 
   useEffect(() => {
     fetchDatabaseRecords()
   }, [fetchDatabaseRecords])
+
+  if (pathname === '/print') {
+    return <div className="min-h-screen bg-white text-black">{children}</div>
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
