@@ -7,6 +7,7 @@ import AdvancedAnalytics from "@/app/advanced-analytics/page"
 import WellAnalytics from "@/app/well-analytics/page"
 import RootCauseAnalysis from "@/app/root-cause/page"
 import RiskAnalysis from "@/app/risk/page"
+import InterventionIntelligence from "@/app/intervention/page"
 
 const componentMap: Record<string, any> = {
   '/': ExecutiveCommandCenter,
@@ -14,6 +15,7 @@ const componentMap: Record<string, any> = {
   '/well-analytics': WellAnalytics,
   '/root-cause': RootCauseAnalysis,
   '/risk': RiskAnalysis,
+  '/intervention': InterventionIntelligence,
 }
 
 function PrintContent() {
@@ -47,9 +49,10 @@ function PrintContent() {
         if (!Component) return null
 
         return (
-          <div key={tabHref} className="print-page w-[1200px] min-h-[850px] p-8 mx-auto bg-white text-black">
-            <div className="mb-4 text-sm text-gray-500 font-bold uppercase tracking-widest border-b pb-2">
-              SLB NPT Intelligence Report
+          <div key={tabHref} className="print-page w-[800px] min-h-[1050px] p-8 mx-auto bg-white text-black">
+            <div className="mb-8 text-xl font-light tracking-tight border-b-2 border-primary pb-4 flex justify-between items-end">
+              <span>SLB NPT Intelligence Report</span>
+              <span className="text-sm font-semibold text-muted-foreground uppercase">{tabHref.replace('/', '') || 'Executive Summary'}</span>
             </div>
             <div className="h-full w-full">
               <Component />
