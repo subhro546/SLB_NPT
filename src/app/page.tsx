@@ -342,7 +342,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Primary financial baseline tracking overall NPT losses.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -363,7 +363,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Tracking raw volume of NPT occurrences decoupled from cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -384,7 +384,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions grouped by the Top 5 Categories over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -408,7 +408,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions attributed to Top 5 Responsible Parties over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -432,7 +432,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Historical trend for the #1 overall cost driver: <strong className="text-foreground">{topCostDriverName}</strong>.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -453,7 +453,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>% of NPT hours successfully recovered via intervention.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto w-full pb-2"><div className="min-w-[600px] h-[300px]"><ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />

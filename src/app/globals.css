@@ -134,6 +134,12 @@
     page-break-inside: avoid;
   }
 
+  /* Prevent cards from splitting across PDF pages */
+  .bg-card, .rounded-xl {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   /* Disable animations and force static rendering for Recharts */
   * {
     animation: none !important;
