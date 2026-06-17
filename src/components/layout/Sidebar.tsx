@@ -31,9 +31,9 @@ export function Sidebar() {
 
   return (
     <div className="hidden md:flex h-full w-64 shrink-0 flex-col border-r bg-background">
-      <div className="flex h-16 shrink-0 items-center px-6 border-b">
+      <div className="flex h-16 shrink-0 items-center px-6 border-b border-primary-foreground/10 bg-primary text-primary-foreground">
         <div className="flex items-center gap-2">
-          <div className="bg-primary p-1.5">
+          <div className="p-1.5 bg-primary-foreground/10">
             <Activity className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-light text-xl tracking-tight">SLB NPT Intel</span>
