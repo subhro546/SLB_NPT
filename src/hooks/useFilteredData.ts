@@ -3,7 +3,7 @@ import { useMemo } from "react"
 import { isActionableCategory } from "@/lib/constants"
 
 export function useFilteredData(): NPTRecord[] {
-  const { datasets, activeDatasetId, globalFilters } = useAppStore()
+  const { datasets, activeDatasetId, globalFilters, savingsMethod } = useAppStore()
 
   const activeDataset = useMemo(() => 
     datasets.find(d => d.id === activeDatasetId), 
@@ -60,7 +60,16 @@ export function useFilteredData(): NPTRecord[] {
           CostSaved: 0
         }
       }
+
+      if (savingsMethod === 'method2') {
+        return {
+          ...record,
+          TimeSavedHours: 7.2, // 0.3 days
+          CostSaved: 22500
+        }
+      }
+
       return record
     })
-  }, [activeDataset, globalFilters])
+  }, [activeDataset, globalFilters, savingsMethod])
 }

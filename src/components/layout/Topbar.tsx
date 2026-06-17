@@ -17,7 +17,7 @@ import { usePathname } from "next/navigation"
 
 export function Topbar() {
   const pathname = usePathname()
-  const { currency, setCurrency } = useAppStore()
+  const { currency, setCurrency, savingsMethod, setSavingsMethod } = useAppStore()
   const { theme, setTheme } = useTheme()
 
   const currencies: { value: Currency; label: string }[] = [
@@ -76,6 +76,19 @@ export function Topbar() {
       </div>
       
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 border-r pr-4 mr-2 border-border hidden sm:flex">
+          <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">Savings Calc:</span>
+          <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="Method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="method1">Method 1 (DB)</SelectItem>
+              <SelectItem value="method2">Method 2 (Flat)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex items-center gap-2">
           <DollarSign className="h-4 w-4 text-muted-foreground" />
           <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>

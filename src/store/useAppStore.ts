@@ -48,6 +48,9 @@ interface AppState {
   currency: Currency;
   setCurrency: (c: Currency) => void;
   
+  savingsMethod: 'method1' | 'method2';
+  setSavingsMethod: (method: 'method1' | 'method2') => void;
+  
   datasets: Dataset[];
   activeDatasetId: string | null;
   addDataset: (dataset: Dataset) => void;
@@ -77,6 +80,9 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       currency: 'USD',
       setCurrency: (c) => set({ currency: c }),
+      
+      savingsMethod: 'method1',
+      setSavingsMethod: (method) => set({ savingsMethod: method }),
       
       datasets: [],
       activeDatasetId: null,
