@@ -263,7 +263,7 @@ export default function RiskAnalysis() {
             <CardDescription>Top 10 Categories by Risk Score</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <BarChart data={riskDistributionData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => v.toFixed(0)} tick={{ fontSize: 11 }} domain={[0, 100]} />
@@ -286,7 +286,7 @@ export default function RiskAnalysis() {
             <CardDescription>Proportional cost impact by responsible party.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <PieChart>
                 <Pie
                   data={top5RespParties}
@@ -318,7 +318,7 @@ export default function RiskAnalysis() {
             <CardDescription>Overall monthly Risk Score trajectory.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <LineChart data={riskTrendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />

@@ -224,7 +224,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Visualizing the P10 to P90 duration spread. The dot represents the P50 median.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <ComposedChart data={boxPlotData} layout="vertical" margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" name="Hours" tick={{ fontSize: 11 }} />
@@ -253,7 +253,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Extra hours consumed when operations slip to worst-case.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <BarChart data={riskGapData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="category" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={80} tickFormatter={formatActionableCategory} />
@@ -275,7 +275,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Top contributors to total financial loss.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <PieChart>
                 <Pie
                   data={top5CatCosts}
@@ -353,7 +353,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Identifying the vital few categories driving the majority of cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <ComposedChart data={paretoData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="category" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
@@ -380,7 +380,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Ranked breakdown of highest priority issues.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <BarChart data={topCategoriesBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -403,7 +403,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Locations requiring immediate operational focus.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <BarChart data={topWellsBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -426,7 +426,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Tracking total financial loss across time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
               <LineChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
