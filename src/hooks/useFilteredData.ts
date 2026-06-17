@@ -50,6 +50,17 @@ export function useFilteredData(): NPTRecord[] {
       }
 
       return true
+    }).map(record => {
+      const actionableCategories = ['Hole Problems', 'Fishing', 'Side Tracking', 'Out of Cycle']
+      if (!actionableCategories.includes(record.NPTCategory)) {
+        return {
+          ...record,
+          TimeSavedHours: 0,
+          TimeSavedDays: 0,
+          CostSaved: 0
+        }
+      }
+      return record
     })
   }, [activeDataset, globalFilters])
 }
