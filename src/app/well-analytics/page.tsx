@@ -84,7 +84,7 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
             <CardTitle className="text-sm">Cost Impact by Category</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] pb-2">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -114,7 +114,7 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
             <CardTitle className="text-sm">NPT Timeline (Monthly)</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] pb-2">
-            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height={250}>
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <BarChart data={timelineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
