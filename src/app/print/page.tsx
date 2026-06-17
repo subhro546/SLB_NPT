@@ -47,11 +47,11 @@ function PrintContent() {
         if (!Component) return null
 
         return (
-          <div key={tabHref} className="print-page w-full min-h-[1040px] p-8">
+          <div key={tabHref} className="print-page w-[1200px] min-h-[850px] p-8 mx-auto bg-white text-black">
             <div className="mb-4 text-sm text-gray-500 font-bold uppercase tracking-widest border-b pb-2">
               SLB NPT Intelligence Report
             </div>
-            <div className="h-full w-full bg-white text-black">
+            <div className="h-full w-full">
               <Component />
             </div>
           </div>
