@@ -33,11 +33,11 @@ export function PrintDialog() {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 hover:text-primary-foreground">
-          <Printer className="mr-2 h-4 w-4" />
-          Export PDF
-        </Button>
+      <DialogTrigger render={
+        <Button variant="outline" size="sm" className="bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+      }>
+        <Printer className="mr-2 h-4 w-4" />
+        Export PDF
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
