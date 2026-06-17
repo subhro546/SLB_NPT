@@ -61,15 +61,22 @@ export function useFilteredData(): NPTRecord[] {
         }
       }
 
+      // Fix inflated DB values by enforcing $3125/hr across all methods
+      const adjustedRecord = {
+        ...record,
+        CostImpact: record.NPTHours * 3125,
+        CostSaved: record.TimeSavedHours * 3125
+      }
+
       if (savingsMethod === 'method2') {
         return {
-          ...record,
+          ...adjustedRecord,
           TimeSavedHours: 7.2, // 0.3 days
           CostSaved: 22500
         }
       }
 
-      return record
+      return adjustedRecord
     })
   }, [activeDataset, globalFilters, savingsMethod])
 }
