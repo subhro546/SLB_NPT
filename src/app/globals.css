@@ -53,7 +53,7 @@
   --popover: #ffffff;
   --popover-foreground: #0f172a;
   /* SLB Blue */
-  --primary: #0033a0;
+  --primary: #0000ff;
   --primary-foreground: #ffffff;
   /* Clean Gray Secondary */
   --secondary: #f1f5f9;
@@ -66,14 +66,14 @@
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #0033a0;
+  --ring: #0000ff;
   /* Chart Colors for Analytics */
-  --chart-1: #0033a0;
+  --chart-1: #0000ff;
   --chart-2: #38bdf8;
   --chart-3: #10b981;
   --chart-4: #f59e0b;
   --chart-5: #6366f1;
-  --radius: 0.5rem;
+  --radius: 0rem;
 }
 
 .dark {
@@ -109,6 +109,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-light;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-light tracking-tight;
   }
 }

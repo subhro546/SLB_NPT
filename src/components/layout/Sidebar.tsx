@@ -33,10 +33,10 @@ export function Sidebar() {
     <div className="hidden md:flex h-full w-64 shrink-0 flex-col border-r bg-background">
       <div className="flex h-16 shrink-0 items-center px-6 border-b">
         <div className="flex items-center gap-2">
-          <div className="bg-primary p-1.5 rounded-md">
-            <Activity className="h-5 w-5 text-white" />
+          <div className="bg-primary p-1.5">
+            <Activity className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-lg tracking-tight">SLB NPT Intel</span>
+          <span className="font-light text-xl tracking-tight">SLB NPT Intel</span>
         </div>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto">
@@ -50,9 +50,9 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors ${
                   isActive 
-                    ? 'bg-primary/10 text-primary' 
+                    ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
@@ -64,7 +64,7 @@ export function Sidebar() {
         </nav>
       </div>
       <div className="border-t p-4">
-        <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+        <button className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
           <Settings className="h-4 w-4" />
           Settings
         </button>
