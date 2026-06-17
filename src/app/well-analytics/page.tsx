@@ -84,7 +84,7 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
             <CardTitle className="text-sm">Cost Impact by Category</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] pb-2">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -114,7 +114,7 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
             <CardTitle className="text-sm">NPT Timeline (Monthly)</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] pb-2">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={timelineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -122,7 +122,7 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
                 <Tooltip 
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar dataKey="NPTHours" fill="var(--color-primary)" radius={[2, 2, 0, 0]} />
+                <Bar isAnimationActive={false} dataKey="NPTHours" fill="var(--color-primary)" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>

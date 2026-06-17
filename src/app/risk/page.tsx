@@ -263,7 +263,7 @@ export default function RiskAnalysis() {
             <CardDescription>Top 10 Categories by Risk Score</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskDistributionData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => v.toFixed(0)} tick={{ fontSize: 11 }} domain={[0, 100]} />
@@ -273,7 +273,7 @@ export default function RiskAnalysis() {
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
-                <Bar dataKey="riskScore" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} name="Risk Score" />
+                <Bar isAnimationActive={false} dataKey="riskScore" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} name="Risk Score" />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -286,7 +286,7 @@ export default function RiskAnalysis() {
             <CardDescription>Proportional cost impact by responsible party.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={top5RespParties}
@@ -318,7 +318,7 @@ export default function RiskAnalysis() {
             <CardDescription>Overall monthly Risk Score trajectory.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={riskTrendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -327,7 +327,7 @@ export default function RiskAnalysis() {
                   formatter={(value: any) => Number(value).toFixed(1)}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="RiskScore" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Risk Score" />
+                <Line isAnimationActive={false} type="monotone" dataKey="RiskScore" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Risk Score" />
               </LineChart>
             </ResponsiveContainer></div></div>
           </CardContent>

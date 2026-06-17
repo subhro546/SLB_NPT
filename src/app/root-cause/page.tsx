@@ -326,7 +326,7 @@ export default function RootCauseAnalysis() {
             </select>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={topCausesChartData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis 
@@ -340,7 +340,7 @@ export default function RootCauseAnalysis() {
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
-                <Bar dataKey={topCauseMetric} fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+                <Bar isAnimationActive={false} dataKey={topCauseMetric} fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -353,7 +353,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Cost impact attribution across main categories</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={stackedData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -365,7 +365,7 @@ export default function RootCauseAnalysis() {
                 />
                 <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                 {allRespParties.map((party, index) => (
-                  <Bar key={party} dataKey={party} stackId="a" fill={STACK_COLORS[index % STACK_COLORS.length]} />
+                  <Bar isAnimationActive={false} key={party} dataKey={party} stackId="a" fill={STACK_COLORS[index % STACK_COLORS.length]} />
                 ))}
               </BarChart>
             </ResponsiveContainer></div></div>
@@ -379,7 +379,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Locations suffering the highest financial penalty</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={topWells} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -389,7 +389,7 @@ export default function RootCauseAnalysis() {
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
-                <Bar dataKey="cost" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
+                <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>

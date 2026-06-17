@@ -224,7 +224,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Visualizing the P10 to P90 duration spread. The dot represents the P50 median.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={boxPlotData} layout="vertical" margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" name="Hours" tick={{ fontSize: 11 }} />
@@ -238,7 +238,7 @@ export default function AdvancedAnalytics() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 {/* Floating bar for P10 to P90 */}
-                <Bar dataKey="range" fill="var(--color-primary)" opacity={0.3} barSize={20} radius={4} name="Spread" />
+                <Bar isAnimationActive={false} dataKey="range" fill="var(--color-primary)" opacity={0.3} barSize={20} radius={4} name="Spread" />
                 {/* Scatter dot for P50 Median */}
                 <Scatter dataKey="P50" fill="var(--color-primary)" name="P50" />
               </ComposedChart>
@@ -253,7 +253,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Extra hours consumed when operations slip to worst-case.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskGapData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="category" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={80} tickFormatter={formatActionableCategory} />
@@ -262,7 +262,7 @@ export default function AdvancedAnalytics() {
                   formatter={(value: any) => [`+${Number(value).toFixed(1)} hrs`, 'Risk Gap']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar dataKey="riskGap" fill="var(--color-orange-500)" radius={[4, 4, 0, 0]} name="Risk Gap" />
+                <Bar isAnimationActive={false} dataKey="riskGap" fill="var(--color-orange-500)" radius={[4, 4, 0, 0]} name="Risk Gap" />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -275,7 +275,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Top contributors to total financial loss.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={top5CatCosts}
@@ -353,7 +353,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Identifying the vital few categories driving the majority of cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={paretoData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="category" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
@@ -366,8 +366,8 @@ export default function AdvancedAnalytics() {
                   ]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar yAxisId="left" dataKey="cost" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="cumulativePct" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 4 }} />
+                <Bar isAnimationActive={false} yAxisId="left" dataKey="cost" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
+                <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="cumulativePct" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 4 }} />
               </ComposedChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -380,7 +380,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Ranked breakdown of highest priority issues.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={topCategoriesBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -390,7 +390,7 @@ export default function AdvancedAnalytics() {
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar dataKey="cost" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} name="Cost Impact" />
+                <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} name="Cost Impact" />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -403,7 +403,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Locations requiring immediate operational focus.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={topWellsBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -413,7 +413,7 @@ export default function AdvancedAnalytics() {
                   cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar dataKey="cost" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Cost Impact" />
+                <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Cost Impact" />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -426,7 +426,7 @@ export default function AdvancedAnalytics() {
             <CardDescription>Tracking total financial loss across time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -435,7 +435,7 @@ export default function AdvancedAnalytics() {
                   formatter={(value: any) => formatCurrency(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="cost" stroke="var(--color-destructive)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Cost Impact" />
+                <Line isAnimationActive={false} type="monotone" dataKey="cost" stroke="var(--color-destructive)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Cost Impact" />
               </LineChart>
             </ResponsiveContainer></div></div>
           </CardContent>

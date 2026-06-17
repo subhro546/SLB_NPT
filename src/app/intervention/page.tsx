@@ -180,8 +180,8 @@ export default function InterventionIntelligence() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="CostImpact" name="Cost Impact" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="CostSaved" name="Cost Saved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
+                <Bar isAnimationActive={false} dataKey="CostImpact" name="Cost Impact" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
+                <Bar isAnimationActive={false} dataKey="CostSaved" name="Cost Saved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -203,7 +203,7 @@ export default function InterventionIntelligence() {
                 formatter={(value: any) => formatCurrency(Number(value))}
                 contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
               />
-              <Line type="monotone" dataKey="CostSaved" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              <Line isAnimationActive={false} type="monotone" dataKey="CostSaved" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>

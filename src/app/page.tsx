@@ -342,7 +342,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Primary financial baseline tracking overall NPT losses.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -351,7 +351,7 @@ export default function ExecutiveCommandCenter() {
                   formatter={(value: any) => formatCurrency(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="CostImpact" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Cost Impact" />
+                <Line isAnimationActive={false} type="monotone" dataKey="CostImpact" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Cost Impact" />
               </LineChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -363,7 +363,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Tracking raw volume of NPT occurrences decoupled from cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -372,7 +372,7 @@ export default function ExecutiveCommandCenter() {
                   formatter={(value: any) => `${value} events`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar dataKey="eventCount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Event Count" />
+                <Bar isAnimationActive={false} dataKey="eventCount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Event Count" />
               </BarChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -384,7 +384,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions grouped by the Top 5 Categories over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -394,9 +394,9 @@ export default function ExecutiveCommandCenter() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 {top5Cats.map((cat, i) => (
-                  <Area key={cat} type="monotone" dataKey={`cat_${cat}`} stackId="1" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} name={cat} />
+                  <Area isAnimationActive={false} key={cat} type="monotone" dataKey={`cat_${cat}`} stackId="1" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} name={cat} />
                 ))}
-                <Area type="monotone" dataKey="cat_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
+                <Area isAnimationActive={false} type="monotone" dataKey="cat_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
               </AreaChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -408,7 +408,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions attributed to Top 5 Responsible Parties over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -418,9 +418,9 @@ export default function ExecutiveCommandCenter() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 {top5Parties.map((party, i) => (
-                  <Area key={party} type="monotone" dataKey={`party_${party}`} stackId="1" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} name={party} />
+                  <Area isAnimationActive={false} key={party} type="monotone" dataKey={`party_${party}`} stackId="1" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} name={party} />
                 ))}
-                <Area type="monotone" dataKey="party_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
+                <Area isAnimationActive={false} type="monotone" dataKey="party_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
               </AreaChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -432,7 +432,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Historical trend for the #1 overall cost driver: <strong className="text-foreground">{topCostDriverName}</strong>.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -441,7 +441,7 @@ export default function ExecutiveCommandCenter() {
                   formatter={(value: any) => formatCurrency(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="TopDriverCost" stroke="var(--color-orange-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name={topCostDriverName} />
+                <Line isAnimationActive={false} type="monotone" dataKey="TopDriverCost" stroke="var(--color-orange-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name={topCostDriverName} />
               </LineChart>
             </ResponsiveContainer></div></div>
           </CardContent>
@@ -453,7 +453,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>% of NPT hours successfully recovered via intervention.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="overflow-x-auto print:overflow-visible w-full pb-2 print:pb-0"><div className="min-w-[600px] md:min-w-0 print:min-w-0 h-[300px] md:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
+            <div className="w-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -462,7 +462,7 @@ export default function ExecutiveCommandCenter() {
                   formatter={(value: any) => `${Number(value).toFixed(1)}%`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="Efficiency" stroke="var(--color-blue-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Efficiency" />
+                <Line isAnimationActive={false} type="monotone" dataKey="Efficiency" stroke="var(--color-blue-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Efficiency" />
               </LineChart>
             </ResponsiveContainer></div></div>
           </CardContent>
