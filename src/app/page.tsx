@@ -342,7 +342,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Primary financial baseline tracking overall NPT losses.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -353,7 +353,7 @@ export default function ExecutiveCommandCenter() {
                 />
                 <Line isAnimationActive={false} type="monotone" dataKey="CostImpact" stroke="var(--color-destructive)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Cost Impact" />
               </LineChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -363,7 +363,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Tracking raw volume of NPT occurrences decoupled from cost.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -374,7 +374,7 @@ export default function ExecutiveCommandCenter() {
                 />
                 <Bar isAnimationActive={false} dataKey="eventCount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Event Count" />
               </BarChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -384,7 +384,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions grouped by the Top 5 Categories over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -398,7 +398,7 @@ export default function ExecutiveCommandCenter() {
                 ))}
                 <Area isAnimationActive={false} type="monotone" dataKey="cat_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
               </AreaChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -408,7 +408,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Cost proportions attributed to Top 5 Responsible Parties over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -422,7 +422,7 @@ export default function ExecutiveCommandCenter() {
                 ))}
                 <Area isAnimationActive={false} type="monotone" dataKey="party_Other" stackId="1" stroke="var(--color-muted)" fill="var(--color-muted)" name="Other" />
               </AreaChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -432,7 +432,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>Historical trend for the #1 overall cost driver: <strong className="text-foreground">{topCostDriverName}</strong>.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -443,7 +443,7 @@ export default function ExecutiveCommandCenter() {
                 />
                 <Line isAnimationActive={false} type="monotone" dataKey="TopDriverCost" stroke="var(--color-orange-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name={topCostDriverName} />
               </LineChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -453,7 +453,7 @@ export default function ExecutiveCommandCenter() {
             <CardDescription>% of NPT hours successfully recovered via intervention.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
@@ -464,7 +464,7 @@ export default function ExecutiveCommandCenter() {
                 />
                 <Line isAnimationActive={false} type="monotone" dataKey="Efficiency" stroke="var(--color-blue-500)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Efficiency" />
               </LineChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

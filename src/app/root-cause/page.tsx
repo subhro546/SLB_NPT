@@ -326,7 +326,7 @@ export default function RootCauseAnalysis() {
             </select>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <BarChart data={topCausesChartData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis 
@@ -342,7 +342,7 @@ export default function RootCauseAnalysis() {
                 />
                 <Bar isAnimationActive={false} dataKey={topCauseMetric} fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
               </BarChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -353,7 +353,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Cost impact attribution across main categories</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <BarChart data={stackedData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -368,7 +368,7 @@ export default function RootCauseAnalysis() {
                   <Bar isAnimationActive={false} key={party} dataKey={party} stackId="a" fill={STACK_COLORS[index % STACK_COLORS.length]} />
                 ))}
               </BarChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -379,7 +379,7 @@ export default function RootCauseAnalysis() {
             <CardDescription>Locations suffering the highest financial penalty</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
-            <div className="w-full h-full overflow-x-auto print:overflow-visible"><div className="min-w-[600px] md:min-w-full h-[300px] sm:h-full print:h-full"><ResponsiveContainer width="99%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="99%" height="100%" minHeight={300}>
               <BarChart data={topWells} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
@@ -391,7 +391,7 @@ export default function RootCauseAnalysis() {
                 />
                 <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
               </BarChart>
-            </ResponsiveContainer></div></div>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
