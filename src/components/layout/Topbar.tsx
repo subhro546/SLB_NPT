@@ -30,11 +30,11 @@ export function Topbar() {
   ]
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 md:px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-primary-foreground/10 bg-primary px-4 md:px-6">
       <div className="flex items-center gap-4">
         {/* Mobile Menu */}
         <Sheet>
-          <SheetTrigger className="md:hidden p-2 -ml-2 rounded-md hover:bg-muted text-muted-foreground">
+          <SheetTrigger className="md:hidden p-2 -ml-2 rounded-md hover:bg-primary-foreground/10 text-primary-foreground">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
@@ -76,8 +76,8 @@ export function Topbar() {
       </div>
       
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 border-r pr-4 mr-2 border-border hidden sm:flex">
-          <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">Savings Calc:</span>
+        <div className="flex items-center gap-2 border-r pr-4 mr-2 border-primary-foreground/20 hidden sm:flex">
+          <span className="text-sm text-primary-foreground/90 font-medium whitespace-nowrap">Savings Calc:</span>
           <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
             <SelectTrigger className="w-[150px] h-9">
               <SelectValue placeholder="Method" />
@@ -90,7 +90,7 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <DollarSign className="h-4 w-4 text-primary-foreground/90" />
           <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
             <SelectTrigger className="w-[120px] h-9">
               <SelectValue placeholder="Currency" />
@@ -107,7 +107,7 @@ export function Topbar() {
 
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="rounded-md p-2 hover:bg-muted transition-colors"
+          className="rounded-md p-2 hover:bg-primary-foreground/10 text-primary-foreground transition-colors"
           aria-label="Toggle theme"
         >
           <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

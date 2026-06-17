@@ -40,8 +40,8 @@ export function Sidebar() {
         </div>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto">
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
+        <nav className="flex-1 py-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-6">
             Analytics
           </div>
           {navigation.map((item) => {
@@ -50,7 +50,7 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
                   isActive 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -64,7 +64,7 @@ export function Sidebar() {
         </nav>
       </div>
       <div className="border-t p-4">
-        <button className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+        <button className="flex w-full items-center gap-3 px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
           <Settings className="h-4 w-4" />
           Settings
         </button>
