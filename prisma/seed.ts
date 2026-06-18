@@ -100,7 +100,7 @@ async function main() {
       responsible: normalizeCategory(String(row['Responsible'] || '')),
       description: row['Description'] ? String(row['Description']) : null,
       asset: row['Asset'] ? String(row['Asset']) : null,
-      rigName: row['Rig Name'] ? String(row['Rig Name']) : null,
+      rigName: (row['Rig'] || row['Rig Name']) ? String(row['Rig'] || row['Rig Name']) : null,
       wellType: row['Well_Type'] ? String(row['Well_Type']) : null,
       odrUsd: odrUsd,
       timeSavedDays: Number(row['Time Saved (Days)']) || 0,
