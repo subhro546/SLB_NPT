@@ -12,7 +12,8 @@ import {
   Settings,
   LineChart,
   Crosshair,
-  Upload
+  Upload,
+  BrainCircuit
 } from "lucide-react"
 
 export const navigation = [
@@ -22,6 +23,7 @@ export const navigation = [
   { name: 'Root Cause Analysis', href: '/root-cause', icon: Crosshair },
   { name: 'Risk Analysis', href: '/risk', icon: Target },
   { name: 'Intervention Intelligence', href: '/intervention', icon: TrendingDown },
+  { name: 'AI Decision Intelligence', href: '/ai-decision-intelligence', icon: BrainCircuit },
   { name: 'Data Explorer', href: '/data-explorer', icon: Database },
   { name: 'Data Ingestion', href: '/upload', icon: Upload },
 ]
