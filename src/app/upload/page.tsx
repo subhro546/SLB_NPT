@@ -31,7 +31,7 @@ export default function UploadPage() {
         
         // Filter out empty rows that Excel sometimes pads out to 1,048,576
         const validJson = rawJson.filter((row: any) => {
-          return row['Well'] || row['Well Name'] || row['Rig'] || row['Rig Name'] || row['Asset'] || row['Code'] || row['NPT Category'];
+          return row['Borehole'] || row['Well'] || row['Well Name'] || row['Rig'] || row['Rig Name'] || row['Asset'] || row['Code'] || row['NPT Category'];
         });
         
         const originalCats = new Set<string>();
@@ -63,7 +63,7 @@ export default function UploadPage() {
 
           return {
             Section: String(row['Section'] || 'Unknown'),
-            Well: String(row['Well Name'] || row['WellName'] || row['Well'] || 'Unknown'),
+            Well: String(row['Borehole'] || row['Mother Borehole Name'] || row['Well Name'] || row['WellName'] || row['Well'] || 'Unknown'),
             FieldName: String(row['Field Name'] || row['FieldName'] || 'Unknown'),
             NPTCategory: normalizedCat,
             NPTSubCategory: normalizedSubCat,
