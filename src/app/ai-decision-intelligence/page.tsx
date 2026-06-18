@@ -4,37 +4,32 @@ import { useState, useEffect, useRef } from "react"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useAppStore } from "@/store/useAppStore"
 import { 
-  generateExecutiveSummary, 
-  generateCostImpactAnalysis, 
-  generateRiskReliabilityAnalysis, 
-  generateSavingsAnalysis,
-  processNaturalLanguageQuery,
-  AIResponse
-} from "@/lib/ai-engine"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+  summarizeCurrentView,
+  compareAssets,
+  compareOnshoreOffshore,
+  identifyCostDrivers,
+  identifySavingsOpportunities,
+  identifyHighRiskRigs,
+  rankAssets,
+  rankRigs,
+  analyzeNPTCategories
+} from "@/lib/analytics-engine"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BrainCircuit, Search, Download, Copy, Send, FileText, FileDown, CheckCircle2 } from "lucide-react"
+import { BrainCircuit, Search, Copy, Send, FileText, FileDown, CheckCircle2, Loader2 } from "lucide-react"
 
 export default function AIDecisionIntelligence() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
-  const [executiveSummary, setExecutiveSummary] = useState<AIResponse | null>(null)
   
-  // Chat state
   const [query, setQuery] = useState("")
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string, title?: string }[]>([])
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  // Auto-generate executive summary on load/data change
-  useEffect(() => {
-    if (data.length > 0) {
-      setExecutiveSummary(generateExecutiveSummary(data))
-    }
-  }, [data])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -48,54 +43,120 @@ export default function AIDecisionIntelligence() {
         <div className="bg-primary/10 p-6 rounded-full mb-6">
           <BrainCircuit className="h-16 w-16 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">AI Decision Engine Unavailable</h2>
+        <h2 className="text-2xl font-bold mb-2">Decision Intelligence Copilot Unavailable</h2>
         <p className="text-muted-foreground mb-6 max-w-md">
-          Please upload or select a dataset to activate the AI decision intelligence module.
+          Please upload or select a dataset to activate the AI copilot.
         </p>
       </div>
     )
   }
 
-  const handleAction = (type: 'exec' | 'cost' | 'risk' | 'savings') => {
-    let res: AIResponse;
-    switch(type) {
-      case 'exec': res = generateExecutiveSummary(data); break;
-      case 'cost': res = generateCostImpactAnalysis(data); break;
-      case 'risk': res = generateRiskReliabilityAnalysis(data); break;
-      case 'savings': res = generateSavingsAnalysis(data); break;
+  const runAnalytics = (action: string, extraArgs?: any) => {
+    switch (action) {
+      case 'compare_assets':
+        const assets = Array.from(new Set(data.map(d => d.Asset).filter(Boolean)));
+        const a1 = extraArgs?.asset1 || assets[0] || 'Unknown';
+        const a2 = extraArgs?.asset2 || assets[1] || 'Unknown';
+        return compareAssets(data, a1, a2);
+      case 'compare_onshore_offshore': return compareOnshoreOffshore(data);
+      case 'identify_cost_drivers': return identifyCostDrivers(data);
+      case 'identify_savings_opportunities': return identifySavingsOpportunities(data);
+      case 'identify_high_risk_rigs': return identifyHighRiskRigs(data);
+      case 'rank_assets': return rankAssets(data);
+      case 'rank_rigs': return rankRigs(data);
+      case 'analyze_npt_categories': return analyzeNPTCategories(data);
+      case 'summarize_current_view':
+      default:
+        return summarizeCurrentView(data);
     }
-    setChatHistory(prev => [
-      ...prev,
-      { role: 'user', content: `Generate ${res.title}` },
-      { role: 'ai', title: res.title, content: res.content }
-    ])
   }
 
-  const handleQuery = (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!query.trim()) return
-
-    const res = processNaturalLanguageQuery(query, data)
+  const generateReport = async (action: string, userQuery: string, title: string) => {
+    setIsProcessing(true)
     
-    setChatHistory(prev => [
-      ...prev,
-      { role: 'user', content: query },
-      { role: 'ai', title: res.title, content: res.content }
-    ])
+    // Step 2: Analytics
+    const analyticsData = runAnalytics(action)
+
+    // Step 3: Executive Summary
+    try {
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analyticsData, userQuery, action })
+      })
+      const { summary } = await res.json()
+
+      setChatHistory(prev => [
+        ...prev,
+        { role: 'user', content: userQuery },
+        { role: 'ai', title, content: summary }
+      ])
+    } catch (e) {
+      console.error(e)
+      setChatHistory(prev => [
+        ...prev,
+        { role: 'user', content: userQuery },
+        { role: 'ai', title: "Error", content: "Failed to connect to the Copilot Engine." }
+      ])
+    }
+    
+    setIsProcessing(false)
+  }
+
+  const handleAction = (action: string, title: string) => {
+    generateReport(action, `Generate: ${title}`, title)
+  }
+
+  const handleQuery = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!query.trim() || isProcessing) return
+
+    const currentQuery = query
     setQuery("")
+    setIsProcessing(true)
+
+    try {
+      // Step 1: Intent
+      const res = await fetch('/api/ai/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: currentQuery })
+      })
+      const intent = await res.json()
+      
+      const action = intent.action || 'summarize_current_view'
+      const title = action.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      
+      // Step 2 & 3
+      const analyticsData = runAnalytics(action, intent)
+
+      const genRes = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analyticsData, userQuery: currentQuery, action })
+      })
+      const { summary } = await genRes.json()
+
+      setChatHistory(prev => [
+        ...prev,
+        { role: 'user', content: currentQuery },
+        { role: 'ai', title: `${title} Insight`, content: summary }
+      ])
+    } catch (e) {
+      setChatHistory(prev => [
+        ...prev,
+        { role: 'user', content: currentQuery },
+        { role: 'ai', title: "Error", content: "Failed to process intent or connect to Hugging Face API." }
+      ])
+    }
+
+    setIsProcessing(false)
   }
 
   const handleSmartPrompt = (prompt: string) => {
     setQuery(prompt);
-    // Give state a tiny tick to update input visually if needed, though we can just execute immediately
     setTimeout(() => {
-      const res = processNaturalLanguageQuery(prompt, data)
-      setChatHistory(prev => [
-        ...prev,
-        { role: 'user', content: prompt },
-        { role: 'ai', title: res.title, content: res.content }
-      ])
-      setQuery("")
+      document.getElementById("chat-submit")?.click()
     }, 50)
   }
 
@@ -118,7 +179,6 @@ export default function AIDecisionIntelligence() {
   const renderFormattedContent = (text: string) => {
     const lines = text.split('\n');
     return lines.map((line, idx) => {
-      // Bold rendering
       const parts = line.split(/(\*\*.*?\*\*)/g);
       const formattedParts = parts.map((part, pIdx) => {
         if (part.startsWith('**') && part.endsWith('**')) {
@@ -127,52 +187,49 @@ export default function AIDecisionIntelligence() {
         return <span key={pIdx}>{part}</span>
       })
 
-      if (line.startsWith('### ')) {
-        return <h3 key={idx} className="text-lg font-bold text-foreground mt-4 mb-2">{formattedParts}</h3>
-      }
-      if (line.startsWith('- ')) {
-        return <li key={idx} className="ml-4 mb-1 list-disc text-muted-foreground">{formattedParts}</li>
-      }
-      if (/^\d+\.\s/.test(line)) {
-        return <li key={idx} className="ml-4 mb-1 list-decimal text-muted-foreground">{formattedParts}</li>
-      }
-      if (line.trim() === '') {
-        return <br key={idx} />
-      }
+      if (line.startsWith('### ')) return <h3 key={idx} className="text-lg font-bold text-foreground mt-4 mb-2">{formattedParts}</h3>
+      if (line.startsWith('- ')) return <li key={idx} className="ml-4 mb-1 list-disc text-muted-foreground">{formattedParts}</li>
+      if (/^\d+\.\s/.test(line)) return <li key={idx} className="ml-4 mb-1 list-decimal text-muted-foreground">{formattedParts}</li>
+      if (line.trim() === '') return <br key={idx} />
       return <p key={idx} className="mb-2 text-muted-foreground leading-relaxed">{formattedParts}</p>
     })
   }
 
   const smartPrompts = [
-    "Summarize Current View",
-    "Analyze Cost Drivers",
-    "Compare Offshore vs Onshore",
-    "Identify High-Risk Rigs",
-    "Find Savings Opportunities",
+    "Where can I save more money?",
+    "Which rig has the highest cost impact?",
+    "Compare offshore and onshore performance.",
+    "Which asset should management prioritize?",
+    "What are the top NPT contributors?",
+    "Summarize the current view."
   ]
 
   return (
     <div className="flex flex-col p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
-      
-      {/* Removed Executive Summary Card */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold tracking-tight">RTDMMA Decision Intelligence Copilot</h1>
+        <p className="text-muted-foreground">Powered by Qwen 2.5 7B + Deterministic Analytics</p>
+      </div>
 
       {/* Section 2: Analysis Buttons */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
-        <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('exec')}>
-          <FileText className="h-5 w-5 text-blue-500" />
-          <span className="font-semibold text-xs">Executive Summary</span>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 shrink-0">
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summarize_current_view', 'Executive Summary')}>
+          <span className="font-semibold text-xs text-blue-500">Executive Summary</span>
         </Button>
-        <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('cost')}>
-          <DollarSignIcon className="h-5 w-5 text-green-500" />
-          <span className="font-semibold text-xs">Cost Impact Analysis</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_cost_drivers', 'Cost Analysis')}>
+          <span className="font-semibold text-xs text-green-500">Cost Analysis</span>
         </Button>
-        <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('risk')}>
-          <AlertTriangleIcon className="h-5 w-5 text-amber-500" />
-          <span className="font-semibold text-xs">Risk & Reliability</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_savings_opportunities', 'Savings Opportunities')}>
+          <span className="font-semibold text-xs text-purple-500">Savings Opportunities</span>
         </Button>
-        <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('savings')}>
-          <TrendingDownIcon className="h-5 w-5 text-purple-500" />
-          <span className="font-semibold text-xs">Savings Opportunity</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('compare_assets', 'Asset Comparison')}>
+          <span className="font-semibold text-xs text-amber-500">Asset Comparison</span>
+        </Button>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('compare_onshore_offshore', 'Offshore vs Onshore')}>
+          <span className="font-semibold text-xs text-indigo-500">Offshore vs Onshore</span>
+        </Button>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_high_risk_rigs', 'High Risk Rigs')}>
+          <span className="font-semibold text-xs text-rose-500">High Risk Rigs</span>
         </Button>
       </div>
 
@@ -181,7 +238,7 @@ export default function AIDecisionIntelligence() {
         <CardHeader className="py-4 border-b bg-muted/30 shrink-0">
           <CardTitle className="text-lg flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
-            Ask the AI
+            Ask the AI Copilot
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
@@ -190,8 +247,8 @@ export default function AIDecisionIntelligence() {
             {chatHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground opacity-70 p-8">
                 <BrainCircuit className="h-12 w-12 mb-4 text-primary/40" />
-                <p>Ask a question about the dashboard data or use the analysis buttons above.</p>
-                <div className="flex flex-wrap justify-center gap-2 mt-6 max-w-lg">
+                <p>Ask a natural language question about the dashboard data.</p>
+                <div className="flex flex-wrap justify-center gap-2 mt-6 max-w-2xl">
                   {smartPrompts.map(p => (
                     <Button key={p} variant="secondary" size="sm" className="text-xs rounded-full" onClick={() => handleSmartPrompt(p)}>
                       {p}
@@ -230,6 +287,15 @@ export default function AIDecisionIntelligence() {
                     </div>
                   </div>
                 ))}
+                
+                {isProcessing && (
+                   <div className="flex justify-start">
+                     <div className="max-w-[85%] rounded-2xl p-4 shadow-sm bg-card border rounded-tl-sm flex items-center gap-3 text-muted-foreground">
+                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                       <span className="text-sm">Qwen 2.5 is analyzing...</span>
+                     </div>
+                   </div>
+                )}
               </div>
             )}
           </div>
@@ -244,12 +310,13 @@ export default function AIDecisionIntelligence() {
             </div>
             <form onSubmit={handleQuery} className="flex gap-2">
               <Input 
-                placeholder="Ask about highest downtime, cost drivers, or compare metrics..." 
+                placeholder="Ask where to save money, compare assets, or rank cost drivers..." 
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="flex-1 shadow-sm"
+                disabled={isProcessing}
               />
-              <Button type="submit" disabled={!query.trim()} className="shrink-0 px-6">
+              <Button type="submit" id="chat-submit" disabled={!query.trim() || isProcessing} className="shrink-0 px-6">
                 <Send className="h-4 w-4 mr-2" />
                 Analyze
               </Button>
@@ -261,16 +328,4 @@ export default function AIDecisionIntelligence() {
 
     </div>
   )
-}
-
-function DollarSignIcon(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-}
-
-function AlertTriangleIcon(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
-}
-
-function TrendingDownIcon(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
 }
