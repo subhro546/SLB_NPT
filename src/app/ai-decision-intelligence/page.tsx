@@ -152,7 +152,7 @@ export default function AIDecisionIntelligence() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-6 space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col h-[calc(100vh-4rem)] p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
       
       {/* Section 1: Executive Summary */}
       <Card className="shrink-0 bg-gradient-to-br from-card to-primary/5 border-primary/20 shadow-md">
@@ -193,14 +193,14 @@ export default function AIDecisionIntelligence() {
       </div>
 
       {/* Section 3: Chat Interface */}
-      <Card className="flex-1 flex flex-col min-h-[400px] border shadow-sm">
-        <CardHeader className="py-4 border-b bg-muted/30">
+      <Card className="flex-1 min-h-0 flex flex-col border shadow-sm">
+        <CardHeader className="py-4 border-b bg-muted/30 shrink-0">
           <CardTitle className="text-lg flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
             Ask the AI
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
+        <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
           
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
             {chatHistory.length === 0 ? (
@@ -250,7 +250,7 @@ export default function AIDecisionIntelligence() {
             )}
           </ScrollArea>
           
-          <div className="p-4 border-t bg-muted/10">
+          <div className="p-4 border-t bg-muted/10 shrink-0">
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3">
               {smartPrompts.map(p => (
                 <button key={p} onClick={() => handleSmartPrompt(p)} className="shrink-0 px-3 py-1 bg-background border rounded-full text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
