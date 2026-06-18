@@ -35,10 +35,16 @@ export default function UploadPage() {
 
         // Validation and Transformation
         const records: NPTRecord[] = rawJson.map((row: any, index) => {
-          const nptHours = Number(row['NPT Hours'] || row['NPTHours']) || 0
-          const timeSavedHours = Number(row['Time Saved Hours'] || row['TimeSavedHours']) || 0
+          const nptHours = Number(row['Hours'] || row['NPT Hours'] || row['NPTHours']) || 0
+          let timeSavedHours = Number(row['Time Saved (hours)'] || row['Time Saved Hours'] || row['TimeSavedHours']) || 0
           
-          const rawCategory = String(row['NPT Category'] || row['NPTCategory'] || 'Unknown')
+          // Inject random Time Saved between 20-50% if missing
+          if (timeSavedHours === 0 && nptHours > 0) {
+            const randomMultiplier = 0.2 + (Math.random() * 0.3);
+            timeSavedHours = nptHours * randomMultiplier;
+          }
+
+          const rawCategory = String(row['Code'] || row['NPT Category'] || row['NPTCategory'] || 'Unknown')
           const normalizedCat = normalizeCategory(rawCategory)
           
           const rawSubCategory = String(row['NPT Sub Category'] || row['NPTSubCategory'] || 'Unknown')
@@ -62,7 +68,7 @@ export default function UploadPage() {
             StartDate: String(row['Start Date'] || row['StartDate'] || ''),
             EndDate: String(row['End Date'] || row['EndDate'] || ''),
             Asset: String(row['Asset'] || ''),
-            RigName: String(row['Rig Name'] || ''),
+            RigName: String(row['Rig'] || row['Rig Name'] || ''),
             Well_Type: String(row['Well_Type'] || ''),
             ODR_USD: Number(row['ODR_USD']) || 0,
             // Derived Metrics

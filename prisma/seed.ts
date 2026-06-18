@@ -30,17 +30,20 @@ async function main() {
   
   console.log('Seeding database from Excel file...');
   
-  const filePath = path.resolve('/Users/subhro/RTDMMA/NPT dummy data - RTDMMA ONGC (2).xlsx')
+  const filePath = path.resolve('/Users/subhro/RTDMMA/NPT_dummy_data_asset_mapped_with_type.xlsx')
   const workbook = XLSX.readFile(filePath)
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
   const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
+  
+  // The Excel file seems to have 1M formatted rows. Filter out the empty ones.
+  const validData = rawData.filter(row => row['Borehole'] && row['Start Date'] && row['Code'])
 
-  console.log(`Found ${rawData.length} records to process.`)
+  console.log(`Found ${rawData.length} raw records. Filtered down to ${validData.length} valid records.`)
 
   const recordsToInsert = [];
 
-  for (const row of rawData) {
+  for (const row of validData) {
     // Parse Dates (handling Excel serial numbers)
     let startDate: Date;
     let endDate: Date;
@@ -67,7 +70,13 @@ async function main() {
     }
 
     const hours = Number(row['Hours']) || 0;
-    const timeSavedHours = Number(row['Time Saved (hours)']) || 0;
+    let timeSavedHours = Number(row['Time Saved (hours)']) || 0;
+    if (timeSavedHours === 0 && hours > 0) {
+      // Random value between 20% and 50% of NPT hours
+      const randomMultiplier = 0.2 + (Math.random() * 0.3);
+      timeSavedHours = hours * randomMultiplier;
+    }
+
     const odrUsd = Number(row['ODR_USD']) || 0;
     
     // Derived Metrics using ODR_USD (Daily Rate)
