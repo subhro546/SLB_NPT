@@ -61,6 +61,10 @@ export default function UploadPage() {
             TimeSavedHours: timeSavedHours,
             StartDate: String(row['Start Date'] || row['StartDate'] || ''),
             EndDate: String(row['End Date'] || row['EndDate'] || ''),
+            Asset: String(row['Asset'] || ''),
+            RigName: String(row['Rig Name'] || ''),
+            Well_Type: String(row['Well_Type'] || ''),
+            ODR_USD: Number(row['ODR_USD']) || 0,
             // Derived Metrics
             CostImpact: nptHours * 3125,
             CostSaved: timeSavedHours * 3125,
