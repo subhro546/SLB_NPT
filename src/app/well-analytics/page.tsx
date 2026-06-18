@@ -17,6 +17,7 @@ import Link from "next/link"
 const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)']
 
 function WellDashboard({ title, wellData, isAggregate = false }: { title: string, wellData: any[], isAggregate?: boolean }) {
+  const { formatCurrency } = useCurrencyFormatter()
   if (wellData.length === 0) return null
 
   const uniqueWellsCount = isAggregate ? new Set(wellData.map(d => d.Well)).size || 1 : 1;
