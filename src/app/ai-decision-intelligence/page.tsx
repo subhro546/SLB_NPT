@@ -6,13 +6,16 @@ import { useAppStore } from "@/store/useAppStore"
 import { 
   summarizeCurrentView,
   compareAssets,
+  compareRigs,
   compareOnshoreOffshore,
   identifyCostDrivers,
   identifySavingsOpportunities,
   identifyHighRiskRigs,
   rankAssets,
   rankRigs,
-  analyzeNPTCategories
+  analyzeNPTCategories,
+  overallBusinessHealth,
+  executiveSummary
 } from "@/lib/analytics-engine"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -53,11 +56,18 @@ export default function AIDecisionIntelligence() {
 
   const runAnalytics = (action: string, extraArgs?: any) => {
     switch (action) {
+      case 'overall_business_health': return overallBusinessHealth(data);
+      case 'executive_summary': return executiveSummary(data);
       case 'compare_assets':
         const assets = Array.from(new Set(data.map(d => d.Asset).filter(Boolean)));
         const a1 = extraArgs?.asset1 || assets[0] || 'Unknown';
         const a2 = extraArgs?.asset2 || assets[1] || 'Unknown';
         return compareAssets(data, a1, a2);
+      case 'compare_rigs':
+        const rigs = Array.from(new Set(data.map(d => d.RigName).filter(Boolean)));
+        const r1 = extraArgs?.rig1 || rigs[0] || 'Unknown';
+        const r2 = extraArgs?.rig2 || rigs[1] || 'Unknown';
+        return compareRigs(data, r1, r2);
       case 'compare_onshore_offshore': return compareOnshoreOffshore(data);
       case 'identify_cost_drivers': return identifyCostDrivers(data);
       case 'identify_savings_opportunities': return identifySavingsOpportunities(data);
@@ -65,6 +75,9 @@ export default function AIDecisionIntelligence() {
       case 'rank_assets': return rankAssets(data);
       case 'rank_rigs': return rankRigs(data);
       case 'analyze_npt_categories': return analyzeNPTCategories(data);
+      case 'general_conversation':
+      case 'clarification_required':
+        return null;
       case 'summarize_current_view':
       default:
         return summarizeCurrentView(data);
@@ -82,7 +95,7 @@ export default function AIDecisionIntelligence() {
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyticsData, userQuery, action })
+        body: JSON.stringify({ analyticsData, userQuery, action, chatHistory })
       })
       const { summary } = await res.json()
 
@@ -120,11 +133,11 @@ export default function AIDecisionIntelligence() {
       const res = await fetch('/api/ai/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: currentQuery })
+        body: JSON.stringify({ query: currentQuery, chatHistory })
       })
       const intent = await res.json()
       
-      const action = intent.action || 'summarize_current_view'
+      const action = intent.intent || intent.action || 'clarification_required'
       const title = action.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       
       // Step 2 & 3
@@ -133,7 +146,7 @@ export default function AIDecisionIntelligence() {
       const genRes = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyticsData, userQuery: currentQuery, action })
+        body: JSON.stringify({ analyticsData, userQuery: currentQuery, action, chatHistory })
       })
       const { summary } = await genRes.json()
 

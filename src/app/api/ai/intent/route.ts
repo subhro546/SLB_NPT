@@ -6,54 +6,84 @@ const MODEL = 'Qwen/Qwen2.5-7B-Instruct';
 
 export async function POST(req: Request) {
   try {
-    const { query } = await req.json();
+    const { query, chatHistory } = await req.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    const prompt = `You are an intent classification engine.
-Available actions:
-* summarize_current_view
-* compare_assets
-* compare_onshore_offshore
+    const historyStr = chatHistory 
+      ? chatHistory.slice(-4).map((msg: any) => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`).join('\n')
+      : 'No history';
+
+    const prompt = `You are an intent classification engine for a drilling operations dashboard.
+Your job is to identify user intent based on their latest query and recent conversation context.
+
+Available intents:
+* overall_business_health
+* executive_summary
 * identify_cost_drivers
 * identify_savings_opportunities
+* compare_assets
+* compare_rigs
+* compare_onshore_offshore
 * identify_high_risk_rigs
+* analyze_npt_categories
 * rank_assets
 * rank_rigs
-* analyze_npt_categories
+* general_conversation
 
-Return ONLY valid JSON. No markdown, no explanations, just the raw JSON object.
+CRITICAL RULES:
+- Never map unknown questions to executive_summary.
+- Never guess.
+- Return ONLY valid JSON. No markdown wrappers.
 
-Example:
-User: "Where can I save more money?"
-{"action": "identify_savings_opportunities"}
+Output Format:
+{
+  "intent": "...",
+  "confidence": 0.95
+}
 
-User: "Compare Asset A and Asset B"
-{"action": "compare_assets", "asset1": "A", "asset2": "B"}
+Examples:
+User: "How well is ONGC doing?"
+{"intent":"overall_business_health","confidence":0.97}
 
-User: "${query}"
-`;
+User: "Where are we losing money?"
+{"intent":"identify_cost_drivers","confidence":0.95}
+
+User: "Hello"
+{"intent":"general_conversation","confidence":0.99}
+
+User: "Are you listening?"
+{"intent":"general_conversation","confidence":0.99}
+
+---
+Recent Chat Context:
+${historyStr}
+
+Current User Query: "${query}"
+Output your JSON intent classification below:`;
 
     const out = await hf.chatCompletion({
       model: MODEL,
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 100,
-      temperature: 0.1, // extremely low temperature for deterministic formatting
+      max_tokens: 150,
+      temperature: 0.1,
     });
 
     let rawResponse = out.choices[0].message.content || "{}";
-    
-    // Strip markdown JSON wrappers if the model ignores the instruction
     rawResponse = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    const intent = JSON.parse(rawResponse);
+    const result = JSON.parse(rawResponse);
+    
+    // Fallback handling
+    if (!result.intent || result.confidence < 0.70) {
+      return NextResponse.json({ intent: 'clarification_required', confidence: result.confidence || 0.0 });
+    }
 
-    return NextResponse.json(intent);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('AI Intent Error:', error);
-    // Fallback if LLM fails
-    return NextResponse.json({ action: 'summarize_current_view' });
+    return NextResponse.json({ intent: 'clarification_required', confidence: 0 });
   }
 }

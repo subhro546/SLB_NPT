@@ -15,6 +15,32 @@ export function summarizeCurrentView(records: NPTRecord[]) {
   };
 }
 
+export function overallBusinessHealth(records: NPTRecord[]) {
+  const totalCost = records.reduce((sum, r) => sum + r.CostImpact, 0);
+  const totalHours = records.reduce((sum, r) => sum + r.NPTHours, 0);
+  const totalEvents = records.length;
+  const savingsOpportunity = records.reduce((sum, r) => sum + r.CostSaved, 0);
+  
+  const catCosts = records.reduce((acc, r) => { acc[r.NPTCategory] = (acc[r.NPTCategory] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
+  const topCat = Object.entries(catCosts).sort((a, b) => b[1] - a[1])[0] || ['None', 0];
+
+  const rigHours = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + r.NPTHours; return acc; }, {} as Record<string, number>);
+  const topRig = Object.entries(rigHours).sort((a, b) => b[1] - a[1])[0] || ['None', 0];
+
+  return {
+    total_cost_impact_usd: totalCost,
+    total_npt_events: totalEvents,
+    total_downtime_hours: totalHours,
+    potential_savings_usd: savingsOpportunity,
+    top_cost_category: topCat[0],
+    biggest_risk_rig: topRig[0]
+  };
+}
+
+export function executiveSummary(records: NPTRecord[]) {
+  return overallBusinessHealth(records); // same metrics, LLM prompt will vary the text
+}
+
 export function compareAssets(records: NPTRecord[], asset1: string, asset2: string) {
   const a1Records = records.filter(r => r.Asset.toLowerCase() === asset1.toLowerCase());
   const a2Records = records.filter(r => r.Asset.toLowerCase() === asset2.toLowerCase());
@@ -29,6 +55,24 @@ export function compareAssets(records: NPTRecord[], asset1: string, asset2: stri
       cost_impact_usd: a2Records.reduce((sum, r) => sum + r.CostImpact, 0),
       downtime_hours: a2Records.reduce((sum, r) => sum + r.NPTHours, 0),
       events: a2Records.length
+    }
+  };
+}
+
+export function compareRigs(records: NPTRecord[], rig1: string, rig2: string) {
+  const r1Records = records.filter(r => r.RigName.toLowerCase() === rig1.toLowerCase());
+  const r2Records = records.filter(r => r.RigName.toLowerCase() === rig2.toLowerCase());
+  
+  return {
+    [rig1]: {
+      cost_impact_usd: r1Records.reduce((sum, r) => sum + r.CostImpact, 0),
+      downtime_hours: r1Records.reduce((sum, r) => sum + r.NPTHours, 0),
+      events: r1Records.length
+    },
+    [rig2]: {
+      cost_impact_usd: r2Records.reduce((sum, r) => sum + r.CostImpact, 0),
+      downtime_hours: r2Records.reduce((sum, r) => sum + r.NPTHours, 0),
+      events: r2Records.length
     }
   };
 }
