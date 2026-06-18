@@ -34,9 +34,8 @@ export function GlobalFilters() {
       if (level > 0 && (globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(r.Asset)) return false;
       if (level > 1 && (globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(r.Well_Type)) return false;
       if (level > 2 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
-      if (level > 3 && (globalFilters.fields || []).length > 0 && !(globalFilters.fields || []).includes(r.FieldName)) return false;
-      if (level > 4 && (globalFilters.wells || []).length > 0 && !(globalFilters.wells || []).includes(r.Well)) return false;
-      if (level > 5 && (globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(r.Section)) return false;
+      if (level > 3 && (globalFilters.wells || []).length > 0 && !(globalFilters.wells || []).includes(r.Well)) return false;
+      if (level > 4 && (globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(r.Section)) return false;
       return true;
     });
   }
@@ -44,10 +43,9 @@ export function GlobalFilters() {
   const uniqueAssets = Array.from(new Set(getHierarchyRecords(0).map(r => r.Asset).filter(Boolean))).sort()
   const uniqueWellTypes = Array.from(new Set(getHierarchyRecords(1).map(r => r.Well_Type).filter(Boolean))).sort()
   const uniqueRigNames = Array.from(new Set(getHierarchyRecords(2).map(r => r.RigName).filter(Boolean))).sort()
-  const uniqueFields = Array.from(new Set(getHierarchyRecords(3).map(r => r.FieldName).filter(Boolean))).sort()
-  const uniqueWells = Array.from(new Set(getHierarchyRecords(4).map(r => r.Well).filter(Boolean))).sort()
-  const uniqueSections = Array.from(new Set(getHierarchyRecords(5).map(r => r.Section).filter(Boolean))).sort()
-  const uniqueCategories = Array.from(new Set(getHierarchyRecords(6).map(r => r.NPTCategory).filter(Boolean))).sort()
+  const uniqueWells = Array.from(new Set(getHierarchyRecords(3).map(r => r.Well).filter(Boolean))).sort()
+  const uniqueSections = Array.from(new Set(getHierarchyRecords(4).map(r => r.Section).filter(Boolean))).sort()
+  const uniqueCategories = Array.from(new Set(getHierarchyRecords(5).map(r => r.NPTCategory).filter(Boolean))).sort()
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
     if (Array.isArray(val)) return acc + val.length
@@ -108,21 +106,7 @@ export function GlobalFilters() {
         </Select>
 
         <Select 
-          value={globalFilters.fields[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ fields: !val || val === 'all' ? [] : [val] })}
-        >
-          <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Field:</span>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            {uniqueFields.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        <Select 
-          value={globalFilters.wells[0] || "all"} 
+          value={globalFilters.wells?.[0] || "all"} 
           onValueChange={(val) => setGlobalFilters({ wells: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">

@@ -18,7 +18,6 @@ export function useFilteredData(): NPTRecord[] {
       if ((globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(record.RigName)) return false
       if ((globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(record.Section)) return false
       if (globalFilters.wells.length > 0 && !globalFilters.wells.includes(record.Well)) return false
-      if (globalFilters.fields.length > 0 && !globalFilters.fields.includes(record.FieldName)) return false
       if (globalFilters.categories.length > 0 && !globalFilters.categories.includes(record.NPTCategory)) return false
       if (globalFilters.subCategories.length > 0 && !globalFilters.subCategories.includes(record.NPTSubCategory)) return false
       if (globalFilters.responsibleParties.length > 0 && !globalFilters.responsibleParties.includes(record.ResponsibleParty)) return false

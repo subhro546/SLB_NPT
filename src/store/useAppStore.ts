@@ -41,7 +41,6 @@ export interface Dataset {
 export interface GlobalFilters {
   sections: string[];
   wells: string[];
-  fields: string[];
   categories: string[];
   subCategories: string[];
   responsibleParties: string[];
@@ -75,7 +74,6 @@ interface AppState {
 const initialFilters: GlobalFilters = {
   sections: [],
   wells: [],
-  fields: [],
   categories: [],
   subCategories: [],
   responsibleParties: [],
