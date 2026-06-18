@@ -30,7 +30,7 @@ async function main() {
   
   console.log('Seeding database from Excel file...');
   
-  const filePath = path.resolve('/Users/subhro/RTDMMA/NPT_dummy_data_asset_mapped_with_type.xlsx')
+  const filePath = path.resolve('/Users/subhro/RTDMMA/NPT_asset_mapping_all_rigs_4420_rows.xlsx')
   const workbook = XLSX.readFile(filePath)
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
