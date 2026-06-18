@@ -152,7 +152,7 @@ export default function AIDecisionIntelligence() {
   ]
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
       
       {/* Section 1: Executive Summary */}
       <Card className="shrink-0 bg-gradient-to-br from-card to-primary/5 border-primary/20 shadow-md">
@@ -193,7 +193,7 @@ export default function AIDecisionIntelligence() {
       </div>
 
       {/* Section 3: Chat Interface */}
-      <Card className="flex-1 min-h-0 flex flex-col border shadow-sm">
+      <Card className="h-[500px] shrink-0 flex flex-col border shadow-sm">
         <CardHeader className="py-4 border-b bg-muted/30 shrink-0">
           <CardTitle className="text-lg flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
