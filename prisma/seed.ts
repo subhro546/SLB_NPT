@@ -5,9 +5,7 @@ import { normalizeCategory } from '../src/lib/normalize'
 
 const prisma = new PrismaClient()
 
-// Constants used for derived metrics (matching our previous logic)
-const HOURLY_RIG_RATE = 20833; // ~$500k per day
-const AVG_SPREAD_COST_RATE = 8333; // ~$200k per day
+// Note: The previous hardcoded rig rates have been replaced by the ODR_USD column from the dataset.
 
 function excelDateToJSDate(serial: number): Date {
   const utc_days  = Math.floor(serial - 25569);
@@ -70,10 +68,13 @@ async function main() {
 
     const hours = Number(row['Hours']) || 0;
     const timeSavedHours = Number(row['Time Saved (hours)']) || 0;
+    const odrUsd = Number(row['ODR_USD']) || 0;
     
-    // Derived Metrics
-    const costImpact = hours * (HOURLY_RIG_RATE + AVG_SPREAD_COST_RATE);
-    const costSaved = timeSavedHours * (HOURLY_RIG_RATE + AVG_SPREAD_COST_RATE);
+    // Derived Metrics using ODR_USD (Daily Rate)
+    // To get hourly rate, we divide ODR_USD by 24
+    const hourlyRate = odrUsd / 24;
+    const costImpact = hours * hourlyRate;
+    const costSaved = timeSavedHours * hourlyRate;
 
     recordsToInsert.push({
       borehole: String(row['Borehole'] || ''),
@@ -89,6 +90,10 @@ async function main() {
       subCode: row['Sub Code'] ? normalizeCategory(String(row['Sub Code'])) : null, // Using subCode for SubCategory
       responsible: normalizeCategory(String(row['Responsible'] || '')),
       description: row['Description'] ? String(row['Description']) : null,
+      asset: row['Asset'] ? String(row['Asset']) : null,
+      rigName: row['Rig Name'] ? String(row['Rig Name']) : null,
+      wellType: row['Well_Type'] ? String(row['Well_Type']) : null,
+      odrUsd: odrUsd,
       timeSavedDays: Number(row['Time Saved (Days)']) || 0,
       timeSavedHours: timeSavedHours,
       costImpact: costImpact,

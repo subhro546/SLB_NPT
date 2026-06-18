@@ -12,7 +12,19 @@ export function useFilteredData(): NPTRecord[] {
   return useMemo(() => {
     if (!activeDataset) return []
 
-    return activeDataset.records.filter(record => {
+    const filteredRecords = activeDataset.records.filter(record => {
+      // Asset Filter
+      if ((globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(record.Asset)) {
+        return false
+      }
+      // Well Type Filter
+      if ((globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(record.Well_Type)) {
+        return false
+      }
+      // Rig Name Filter
+      if ((globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(record.RigName)) {
+        return false
+      }
       // Section Filter
       if ((globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(record.Section)) {
         return false
@@ -51,7 +63,10 @@ export function useFilteredData(): NPTRecord[] {
       }
 
       return true
-    }).map(record => {
+    })
+
+    const baseMappedRecords = filteredRecords.map(record => {
+      // For non-actionable categories, savings are 0
       if (!isActionableCategory(record.NPTCategory)) {
         return {
           ...record,
@@ -61,22 +76,45 @@ export function useFilteredData(): NPTRecord[] {
         }
       }
 
-      // Fix inflated DB values by enforcing $3125/hr across all methods
-      const adjustedRecord = {
+      // Method 1 (Current Logic)
+      // Uses ODR_USD (daily rate) -> Hourly Rate = ODR_USD / 24
+      const hourlyRate = (record.ODR_USD || 0) / 24;
+      
+      return {
         ...record,
-        CostImpact: record.NPTHours * 3125,
-        CostSaved: record.TimeSavedHours * 3125
+        CostImpact: record.NPTHours * hourlyRate,
+        CostSaved: record.TimeSavedHours * hourlyRate
       }
-
-      if (savingsMethod === 'method2') {
-        return {
-          ...adjustedRecord,
-          TimeSavedHours: 7.2, // 0.3 days
-          CostSaved: 22500
-        }
-      }
-
-      return adjustedRecord
     })
+
+    if (savingsMethod === 'method2') {
+      // Method 2 (Fixed Savings Scenario)
+      // Apply only to the Top 10 Actionable NPT events globally (by NPTHours)
+      
+      // Filter out non-actionable before sorting to ensure we actually get top 10 actionable events
+      const actionableRecords = baseMappedRecords.filter(r => isActionableCategory(r.NPTCategory));
+      const sortedRecords = [...actionableRecords].sort((a, b) => b.NPTHours - a.NPTHours)
+      const top10Records = new Set(sortedRecords.slice(0, 10).map(r => r.StartDate + r.Well + r.NPTCategory + r.NPTHours))
+
+      return baseMappedRecords.map(record => {
+        const recordId = record.StartDate + record.Well + record.NPTCategory + record.NPTHours;
+        if (top10Records.has(recordId)) {
+          return {
+            ...record,
+            TimeSavedHours: 72, // 3 days
+            TimeSavedDays: 3,
+            CostSaved: 3 * (record.ODR_USD || 0)
+          }
+        }
+        return {
+          ...record,
+          TimeSavedHours: 0,
+          TimeSavedDays: 0,
+          CostSaved: 0
+        }
+      })
+    }
+
+    return baseMappedRecords
   }, [activeDataset, globalFilters, savingsMethod])
 }

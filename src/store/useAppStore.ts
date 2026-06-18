@@ -14,6 +14,10 @@ export interface NPTRecord {
   TimeSavedHours: number;
   StartDate: string;
   EndDate: string;
+  Asset: string;
+  RigName: string;
+  Well_Type: string;
+  ODR_USD: number;
   // Derived
   CostImpact: number;
   CostSaved: number;
@@ -41,6 +45,9 @@ export interface GlobalFilters {
   categories: string[];
   subCategories: string[];
   responsibleParties: string[];
+  assets: string[];
+  wellTypes: string[];
+  rigNames: string[];
   dateRange: { start: string | null; end: string | null };
 }
 
@@ -72,6 +79,9 @@ const initialFilters: GlobalFilters = {
   categories: [],
   subCategories: [],
   responsibleParties: [],
+  assets: [],
+  wellTypes: [],
+  rigNames: [],
   dateRange: { start: null, end: null },
 };
 

@@ -29,10 +29,13 @@ export function GlobalFilters() {
   const records = activeDataset.records
 
   // Extract unique values for filters
-  const uniqueSections = Array.from(new Set(records.map(r => r.Section))).sort()
-  const uniqueWells = Array.from(new Set(records.map(r => r.Well))).sort()
-  const uniqueFields = Array.from(new Set(records.map(r => r.FieldName))).sort()
-  const uniqueCategories = Array.from(new Set(records.map(r => r.NPTCategory))).sort()
+  const uniqueSections = Array.from(new Set(records.map(r => r.Section).filter(Boolean))).sort()
+  const uniqueWells = Array.from(new Set(records.map(r => r.Well).filter(Boolean))).sort()
+  const uniqueFields = Array.from(new Set(records.map(r => r.FieldName).filter(Boolean))).sort()
+  const uniqueCategories = Array.from(new Set(records.map(r => r.NPTCategory).filter(Boolean))).sort()
+  const uniqueAssets = Array.from(new Set(records.map(r => r.Asset).filter(Boolean))).sort()
+  const uniqueWellTypes = Array.from(new Set(records.map(r => r.Well_Type).filter(Boolean))).sort()
+  const uniqueRigNames = Array.from(new Set(records.map(r => r.RigName).filter(Boolean))).sort()
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
     if (Array.isArray(val)) return acc + val.length
@@ -50,6 +53,45 @@ export function GlobalFilters() {
       </div>
 
       <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
+        <Select 
+          value={globalFilters.assets?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ assets: !val || val === 'all' ? [] : [val] })}
+        >
+          <SelectTrigger className="w-[120px] h-8 text-xs">
+            <SelectValue placeholder="All Assets" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Assets</SelectItem>
+            {uniqueAssets.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={globalFilters.wellTypes?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ wellTypes: !val || val === 'all' ? [] : [val] })}
+        >
+          <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectValue placeholder="All Well Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Well Types</SelectItem>
+            {uniqueWellTypes.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={globalFilters.rigNames?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ rigNames: !val || val === 'all' ? [] : [val] })}
+        >
+          <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectValue placeholder="All Rigs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Rigs</SelectItem>
+            {uniqueRigNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
         <Select 
           value={globalFilters.sections?.[0] || "all"} 
           onValueChange={(val) => setGlobalFilters({ sections: !val || val === 'all' ? [] : [val] })}

@@ -27,6 +27,10 @@ model NPTRecord {
   subCode          String?
   responsible      String
   description      String?
+  asset            String?
+  rigName          String?
+  wellType         String?
+  odrUsd           Float?
   timeSavedDays    Float
   timeSavedHours   Float
   costImpact       Float
