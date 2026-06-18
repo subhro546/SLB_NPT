@@ -24,17 +24,22 @@ export default function UploadPage() {
     reader.onload = (e) => {
       try {
         const data = e.target?.result
-        const workbook = XLSX.read(data, { type: 'binary' })
+        const workbook = XLSX.read(data, { type: 'binary', cellDates: true })
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const rawJson = XLSX.utils.sheet_to_json(worksheet)
+        
+        // Filter out empty rows that Excel sometimes pads out to 1,048,576
+        const validJson = rawJson.filter((row: any) => {
+          return row['Well'] || row['Well Name'] || row['Rig'] || row['Rig Name'] || row['Asset'] || row['Code'] || row['NPT Category'];
+        });
         
         const originalCats = new Set<string>();
         const normalizedCats = new Set<string>();
         let recordsMerged = 0;
 
         // Validation and Transformation
-        const records: NPTRecord[] = rawJson.map((row: any, index) => {
+        const records: NPTRecord[] = validJson.map((row: any, index) => {
           const nptHours = Number(row['Hours'] || row['NPT Hours'] || row['NPTHours']) || 0
           let timeSavedHours = Number(row['Time Saved (hours)'] || row['Time Saved Hours'] || row['TimeSavedHours']) || 0
           
@@ -58,15 +63,15 @@ export default function UploadPage() {
 
           return {
             Section: String(row['Section'] || 'Unknown'),
-            Well: String(row['Well'] || 'Unknown'),
+            Well: String(row['Well Name'] || row['WellName'] || row['Well'] || 'Unknown'),
             FieldName: String(row['Field Name'] || row['FieldName'] || 'Unknown'),
             NPTCategory: normalizedCat,
             NPTSubCategory: normalizedSubCat,
             ResponsibleParty: normalizeCategory(String(row['Responsible Party'] || row['ResponsibleParty'] || 'Unknown')),
             NPTHours: nptHours,
             TimeSavedHours: timeSavedHours,
-            StartDate: String(row['Start Date'] || row['StartDate'] || ''),
-            EndDate: String(row['End Date'] || row['EndDate'] || ''),
+            StartDate: row['Start Date'] instanceof Date ? row['Start Date'].toISOString() : (row['StartDate'] instanceof Date ? row['StartDate'].toISOString() : String(row['Start Date'] || row['StartDate'] || '')),
+            EndDate: row['End Date'] instanceof Date ? row['End Date'].toISOString() : (row['EndDate'] instanceof Date ? row['EndDate'].toISOString() : String(row['End Date'] || row['EndDate'] || '')),
             Asset: String(row['Asset'] || ''),
             RigName: String(row['Rig'] || row['Rig Name'] || ''),
             Well_Type: String(row['Well_Type'] || ''),
