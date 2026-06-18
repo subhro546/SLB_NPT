@@ -16,20 +16,19 @@ import Link from "next/link"
 
 const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)']
 
-function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
-  const { formatCurrency } = useCurrencyFormatter()
-  const wellData = data.filter(d => d.Well === wellName)
-
+function WellDashboard({ title, wellData, isAggregate = false }: { title: string, wellData: any[], isAggregate?: boolean }) {
   if (wellData.length === 0) return null
 
-  const totalNPT = wellData.reduce((acc, curr) => acc + curr.NPTHours, 0)
-  const totalCostImpact = wellData.reduce((acc, curr) => acc + curr.CostImpact, 0)
-  const totalTimeSaved = wellData.reduce((acc, curr) => acc + curr.TimeSavedHours, 0)
-  const totalCostSaved = wellData.reduce((acc, curr) => acc + curr.CostSaved, 0)
+  const uniqueWellsCount = isAggregate ? new Set(wellData.map(d => d.Well)).size || 1 : 1;
+
+  const totalNPT = wellData.reduce((acc, curr) => acc + curr.NPTHours, 0) / uniqueWellsCount
+  const totalCostImpact = wellData.reduce((acc, curr) => acc + curr.CostImpact, 0) / uniqueWellsCount
+  const totalTimeSaved = wellData.reduce((acc, curr) => acc + curr.TimeSavedHours, 0) / uniqueWellsCount
+  const totalCostSaved = wellData.reduce((acc, curr) => acc + curr.CostSaved, 0) / uniqueWellsCount
   const avgEfficiency = totalNPT > 0 ? (totalTimeSaved / totalNPT) * 100 : 0
 
   const categoryCosts = wellData.reduce((acc, curr) => {
-    acc[curr.NPTCategory] = (acc[curr.NPTCategory] || 0) + curr.CostImpact;
+    acc[curr.NPTCategory] = (acc[curr.NPTCategory] || 0) + (curr.CostImpact / uniqueWellsCount);
     return acc;
   }, {} as Record<string, number>);
 
@@ -46,8 +45,8 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
     
     const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     if (!acc[month]) acc[month] = { month, NPTHours: 0, CostImpact: 0 };
-    acc[month].NPTHours += curr.NPTHours;
-    acc[month].CostImpact += curr.CostImpact;
+    acc[month].NPTHours += (curr.NPTHours / uniqueWellsCount);
+    acc[month].CostImpact += (curr.CostImpact / uniqueWellsCount);
     return acc;
   }, {} as Record<string, { month: string, NPTHours: number, CostImpact: number }>);
   
@@ -57,11 +56,11 @@ function WellDashboard({ wellName, data }: { wellName: string, data: any[] }) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="space-y-1 p-3 bg-muted/50 rounded-md">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total NPT</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{isAggregate ? 'Avg NPT/Well' : 'Total NPT'}</p>
           <p className="text-xl font-bold">{totalNPT.toLocaleString(undefined, { maximumFractionDigits: 1 })}h</p>
         </div>
         <div className="space-y-1 p-3 bg-muted/50 rounded-md">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Cost Impact</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{isAggregate ? 'Avg Cost/Well' : 'Cost Impact'}</p>
           <p className="text-xl font-bold text-destructive">{formatCurrency(totalCostImpact, true)}</p>
         </div>
         <div className="space-y-1 p-3 bg-muted/50 rounded-md">
@@ -136,11 +135,9 @@ export default function WellAnalyticsPage() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
   
-  const uniqueWells = Array.from(new Set(data.map(d => d.Well))).sort()
+  const uniqueWells = Array.from(new Set(data.map(d => d.Well).filter(w => w && w !== 'Unknown'))).sort()
   
   const [well1, setWell1] = useState<string>(uniqueWells[0] || "")
-  const [well2, setWell2] = useState<string>("")
-  const [isComparing, setIsComparing] = useState(false)
 
   if (!activeDatasetId) {
     return (
@@ -164,6 +161,17 @@ export default function WellAnalyticsPage() {
     setWell1(uniqueWells[0] || "")
   }
 
+  const well1Data = data.filter(d => d.Well === well1)
+  const well1Type = well1Data[0]?.Well_Type || 'Unknown'
+  const isOffshore = well1Type.toLowerCase().includes('offshore')
+  
+  const groupLabel = isOffshore ? 'Offshore Average' : 'Onshore Average'
+  const groupData = data.filter(d => {
+    const type = d.Well_Type?.toLowerCase() || ''
+    if (isOffshore) return type.includes('offshore')
+    return type.includes('onshore') || type.includes('land')
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -175,9 +183,9 @@ export default function WellAnalyticsPage() {
 
       <div className="bg-card border rounded-lg p-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium">Primary Well:</span>
+          <span className="text-sm font-medium">Select Well:</span>
           <Select value={well1} onValueChange={(val) => setWell1(val || "")}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[300px]">
               <SelectValue placeholder="Select Well" />
             </SelectTrigger>
             <SelectContent>
@@ -185,54 +193,29 @@ export default function WellAnalyticsPage() {
             </SelectContent>
           </Select>
         </div>
-
-        {!isComparing ? (
-          <Button variant="outline" onClick={() => {
-            setIsComparing(true)
-            setWell2(uniqueWells.find(w => w !== well1) || uniqueWells[0] || "")
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Compare with another well
-          </Button>
-        ) : (
-          <div className="flex items-center gap-3 ml-auto bg-muted/50 p-2 rounded-md">
-            <span className="text-sm font-medium text-primary">Compare to:</span>
-            <Select value={well2} onValueChange={(val) => setWell2(val || "")}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select Well" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueWells.map(w => <SelectItem key={`cmp-${w}`} value={w}>{w}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button variant="ghost" size="icon" onClick={() => setIsComparing(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </div>
 
-      <div className={`grid gap-6 ${isComparing ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {well1 && (
           <Card className="border-primary/20">
             <CardHeader className="bg-primary/5 border-b pb-3">
               <CardTitle className="text-xl text-primary">{well1}</CardTitle>
-              <CardDescription>Primary Analytics</CardDescription>
+              <CardDescription>Well Type: {well1Type}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <WellDashboard wellName={well1} data={data} />
+              <WellDashboard title={well1} wellData={well1Data} />
             </CardContent>
           </Card>
         )}
 
-        {isComparing && well2 && (
+        {well1 && groupData.length > 0 && (
           <Card className="border-border">
             <CardHeader className="bg-muted/30 border-b pb-3">
-              <CardTitle className="text-xl">{well2}</CardTitle>
-              <CardDescription>Comparison Well</CardDescription>
+              <CardTitle className="text-xl">{groupLabel}</CardTitle>
+              <CardDescription>Benchmarked against all {isOffshore ? 'Offshore' : 'Onshore'} wells</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <WellDashboard wellName={well2} data={data} />
+              <WellDashboard title={groupLabel} wellData={groupData} isAggregate={true} />
             </CardContent>
           </Card>
         )}
