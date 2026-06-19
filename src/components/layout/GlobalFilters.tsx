@@ -11,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useMemo } from "react"
-import { formatActionableCategory } from "@/lib/constants"
+import { formatActionableCategory, isActionableCategory } from "@/lib/constants"
 
 export function GlobalFilters() {
   const pathname = usePathname()
@@ -31,6 +32,7 @@ export function GlobalFilters() {
   // Hierarchical Filter Logic
   const getHierarchyRecords = (level: number) => {
     return records.filter(r => {
+      if (globalFilters.actionableOnly && !isActionableCategory(r.NPTCategory)) return false;
       if (level > 0 && (globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(r.Asset)) return false;
       if (level > 1 && (globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(r.Well_Type)) return false;
       if (level > 2 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
@@ -52,6 +54,7 @@ export function GlobalFilters() {
     if (val && typeof val === 'object' && ('start' in val || 'end' in val)) {
       return acc + (val.start ? 1 : 0) + (val.end ? 1 : 0)
     }
+    if (typeof val === 'boolean' && val === true) return acc + 1
     return acc
   }, 0)
 
@@ -146,6 +149,20 @@ export function GlobalFilters() {
             {uniqueCategories.map(c => <SelectItem key={c} value={c}>{formatActionableCategory(c)}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <div className="flex items-center space-x-2 bg-muted/30 px-3 py-1.5 rounded-md border text-xs whitespace-nowrap">
+          <Checkbox 
+            id="actionable" 
+            checked={globalFilters.actionableOnly}
+            onCheckedChange={(checked) => setGlobalFilters({ actionableOnly: checked as boolean })}
+          />
+          <label
+            htmlFor="actionable"
+            className="text-muted-foreground font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            Recoverable Categories Only (🟢)
+          </label>
+        </div>
       </div>
 
       {activeFilterCount > 0 && (

@@ -13,6 +13,7 @@ export function useFilteredData(): NPTRecord[] {
     if (!activeDataset) return []
 
     const filteredRecords = activeDataset.records.filter(record => {
+      if (globalFilters.actionableOnly && !isActionableCategory(record.NPTCategory)) return false
       if ((globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(record.Asset)) return false
       if ((globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(record.Well_Type)) return false
       if ((globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(record.RigName)) return false
