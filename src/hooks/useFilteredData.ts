@@ -26,17 +26,28 @@ export function useFilteredData(): NPTRecord[] {
     })
 
     // Apply the Savings Method overrides
-    return filtered.map(record => {
-      if (savingsMethod === 'method2') {
-        const timeSaved = 72; // 3 days flat for method 2
+    if (savingsMethod === 'method2') {
+      const categoryCounts: Record<string, number> = {};
+      filtered.forEach(r => {
+        categoryCounts[r.Category] = (categoryCounts[r.Category] || 0) + 1;
+      });
+
+      return filtered.map(record => {
+        const N = categoryCounts[record.Category];
+        // 72 hours per every 10 events (rounded up)
+        const totalCategoryHours = Math.ceil(N / 10) * 72;
+        // Distribute equally across the N events
+        const timeSaved = totalCategoryHours / N;
         const costSaved = (timeSaved / 24) * record.CostUSDPerDay;
+        
         return {
           ...record,
           TimeSaved: timeSaved,
           CostSaved: costSaved
         };
-      }
-      return record;
-    });
+      });
+    }
+
+    return filtered;
   }, [activeDataset, globalFilters, savingsMethod])
 }
