@@ -16,7 +16,7 @@ export const ACTIONABLE_CATEGORIES = [
 ]
 
 export const isActionableCategory = (category: string) => {
-  return ACTIONABLE_CATEGORIES.includes(category)
+  return true
 }
 
 export const formatActionableCategory = (category: string) => {
