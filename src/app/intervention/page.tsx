@@ -6,7 +6,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend
+  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend, PieChart, Pie, Cell
 } from 'recharts'
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
@@ -314,7 +314,7 @@ export default function InterventionIntelligence() {
         </Card>
 
         {/* Savings Waterfall */}
-        <Card className="col-span-1 lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Savings Contribution Waterfall</CardTitle>
             <CardDescription>Cumulative accumulation of time saved across top categories.</CardDescription>
@@ -334,6 +334,38 @@ export default function InterventionIntelligence() {
                 />
                 <Bar isAnimationActive={false} dataKey="range" fill="var(--color-emerald-500)" opacity={0.8} barSize={40} radius={4} name="Contribution" />
               </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Savings Composition Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Savings Composition</CardTitle>
+            <CardDescription>Share of total time saved across top categories.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={topCategories}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={2}
+                  dataKey="TimeSaved"
+                >
+                  {topCategories.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`var(--color-chart-${(index % 5) + 1})`} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, formatActionableCategory(name)]}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} formatter={(value) => formatActionableCategory(value)} />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
