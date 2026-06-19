@@ -78,25 +78,31 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const matrixData = Object.values(matrixAgg).sort((a, b) => (b.Development + b.Exploratory) - (a.Development + a.Exploratory)).slice(0, 10);
 
-  // 3. Depth Impact Scatter
-  // Adding jitter or aggregating slightly so points don't perfectly overlap
-  const depthData = data.filter(d => d.Depth > 0).map((d, i) => ({
-    id: i,
-    name: d.Category,
-    Depth: d.Depth,
-    TimeSaved: d.TimeSaved,
-    CostSaved: d.CostSaved
-  }));
+  // 3. Savings by Depth Range
+  const depthBins: Record<string, { range: string, TimeSaved: number, Events: number }> = {};
+  data.filter(d => d.Depth > 0).forEach(d => {
+    const binIndex = Math.floor(d.Depth / 1000);
+    const range = `${binIndex * 1000} - ${(binIndex + 1) * 1000}m`;
+    if (!depthBins[range]) depthBins[range] = { range, TimeSaved: 0, Events: 0 };
+    depthBins[range].TimeSaved += d.TimeSaved;
+    depthBins[range].Events += 1;
+  });
+  
+  const binnedDepthData = Object.values(depthBins)
+    .map(b => ({
+      range: b.range,
+      AvgTimeSaved: b.Events > 0 ? b.TimeSaved / b.Events : 0
+    }))
+    .sort((a, b) => parseInt(a.range.split(' ')[0]) - parseInt(b.range.split(' ')[0]));
 
   // --- RETAINED UNIQUE CHARTS ---
 
-  // 4. Cost Impact vs Time Saved Scatter Plot
-  const scatterData = catArr.map(c => ({
+  // 4. Average Cost Impact vs Cost Saved per Category
+  const costEfficiencyData = catArr.map(c => ({
     name: c.name,
-    x: c.TimeSaved,
-    y: c.CostImpact,
-    z: c.Events
-  }));
+    AvgCostImpact: c.Events > 0 ? c.CostImpact / c.Events : 0,
+    AvgCostSaved: c.Events > 0 ? c.CostSaved / c.Events : 0,
+  })).sort((a, b) => b.AvgCostImpact - a.AvgCostImpact).slice(0, 10);
 
   // 5. Event Distribution by Category
   const eventDistribution = [...catArr].sort((a, b) => b.Events - a.Events).slice(0, 10);
@@ -239,30 +245,24 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* NEW: Depth Impact Scatter */}
+        {/* REPLACED: Depth Impact Analysis (Bar Chart) */}
         <Card>
           <CardHeader>
-            <CardTitle>Depth Impact Analysis</CardTitle>
+            <CardTitle>Average Savings by Depth</CardTitle>
             <CardDescription>Does operating depth influence intervention success?</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" dataKey="Depth" name="Depth (m/ft)" tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+              <BarChart data={binnedDepthData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="range" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
                 <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }}
+                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                  formatter={(value: any, name: any, props: any) => {
-                    if (name === 'Depth (m/ft)') return value;
-                    if (name === 'Time Saved') return `${Number(value).toFixed(1)} hrs`;
-                    return value;
-                  }}
-                  labelFormatter={(label) => `Depth: ${label}`}
                 />
-                <Scatter data={depthData} fill="var(--color-primary)" opacity={0.6} />
-              </ScatterChart>
+                <Bar isAnimationActive={false} dataKey="AvgTimeSaved" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Avg Time Saved" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -289,31 +289,26 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* Scatter Plot */}
+        {/* REPLACED: Cost vs Time Efficiency */}
         <Card>
           <CardHeader>
-            <CardTitle>Cost vs Time Efficiency</CardTitle>
-            <CardDescription>Visualizing efficiency correlation by Category.</CardDescription>
+            <CardTitle>Average Cost Impact vs Cost Saved</CardTitle>
+            <CardDescription>Visualizing financial efficiency per Category per Event.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" dataKey="x" name="Time Saved" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
-                <YAxis type="number" dataKey="y" name="Cost Impact" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
-                <ZAxis type="number" dataKey="z" range={[60, 400]} name="Events" />
+              <ComposedChart data={costEfficiencyData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
                 <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }}
+                  formatter={(value: any) => formatCurrency(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                  formatter={(value: any, name: any) => {
-                    if (name === 'Time Saved') return `${Number(value).toFixed(1)} hrs`;
-                    if (name === 'Cost Impact') return formatCurrency(Number(value));
-                    return value;
-                  }}
-                  labelFormatter={() => ''}
                 />
-                <Scatter data={scatterData} fill="var(--color-chart-5)" opacity={0.7} />
-              </ScatterChart>
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar isAnimationActive={false} dataKey="AvgCostImpact" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} name="Avg Cost Impact" opacity={0.5} />
+                <Line type="monotone" isAnimationActive={false} dataKey="AvgCostSaved" stroke="var(--color-emerald-500)" strokeWidth={2} dot={false} name="Avg Cost Saved" />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
