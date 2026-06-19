@@ -350,7 +350,28 @@ export default function NPTAnalytics() {
           </CardContent>
         </Card>
 
-
+        {/* Rankings: Top Cost Wells */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 10 Wells by Cost Impact</CardTitle>
+            <CardDescription>Locations requiring immediate operational focus.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topWellsBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
+                <RechartsTooltip 
+                  formatter={(value: any) => formatCurrency(Number(value))}
+                  cursor={{fill: 'var(--color-muted)'}}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Cost Impact" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
         {/* Trend: Monthly Cost Impact */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
