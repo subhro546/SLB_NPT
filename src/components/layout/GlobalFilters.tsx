@@ -32,7 +32,7 @@ export function GlobalFilters() {
   // Hierarchical Filter Logic
   const getHierarchyRecords = (level: number) => {
     return records.filter(r => {
-      if (globalFilters.actionableOnly && !isActionableCategory(r.NPTCategory)) return false;
+      if (!isActionableCategory(r.NPTCategory)) return false;
       if (level > 0 && (globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(r.Asset)) return false;
       if (level > 1 && (globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(r.Well_Type)) return false;
       if (level > 2 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
@@ -150,19 +150,7 @@ export function GlobalFilters() {
           </SelectContent>
         </Select>
 
-        <div className="flex items-center space-x-2 bg-muted/30 px-3 py-1.5 rounded-md border text-xs whitespace-nowrap">
-          <Checkbox 
-            id="actionable" 
-            checked={globalFilters.actionableOnly}
-            onCheckedChange={(checked) => setGlobalFilters({ actionableOnly: checked as boolean })}
-          />
-          <label
-            htmlFor="actionable"
-            className="text-muted-foreground font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-          >
-            Recoverable Categories Only (🟢)
-          </label>
-        </div>
+
       </div>
 
       {activeFilterCount > 0 && (

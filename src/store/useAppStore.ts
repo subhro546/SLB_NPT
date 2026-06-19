@@ -48,7 +48,6 @@ export interface GlobalFilters {
   wellTypes: string[];
   rigNames: string[];
   dateRange: { start: string | null; end: string | null };
-  actionableOnly: boolean;
 }
 
 interface AppState {
@@ -82,7 +81,6 @@ const initialFilters: GlobalFilters = {
   wellTypes: [],
   rigNames: [],
   dateRange: { start: null, end: null },
-  actionableOnly: false,
 };
 
 export const useAppStore = create<AppState>()(
