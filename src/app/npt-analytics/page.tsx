@@ -13,7 +13,7 @@ import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 
 const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-destructive)'];
 
-export default function AdvancedAnalytics() {
+export default function NPTAnalytics() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
   const { formatCurrency } = useCurrencyFormatter()
@@ -142,7 +142,7 @@ export default function AdvancedAnalytics() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Advanced Analytics</h1>
+          <h1 className="text-3xl font-bold tracking-tight">NPT Analytics</h1>
           <p className="text-muted-foreground mt-1">Deep operational metrics, risk variance, and uncertainty analysis.</p>
         </div>
       </div>
@@ -300,52 +300,6 @@ export default function AdvancedAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Percentile Data Table */}
-        <Card className="col-span-1 lg:col-span-2 flex flex-col border-primary/20 shadow-sm">
-          <CardHeader>
-            <CardTitle>Variability & Uncertainty Ranking</CardTitle>
-            <CardDescription>
-              Detailed breakdown of P10, P50, and P90 values. Categories with high Spreads and Risk Gaps represent severe operational risk.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Category</th>
-                    <th className="px-4 py-3 font-medium text-right text-emerald-600">P10 (Best 10%)</th>
-                    <th className="px-4 py-3 font-medium text-right text-primary">P50 (Median)</th>
-                    <th className="px-4 py-3 font-medium text-right text-destructive">P90 (Worst 10%)</th>
-                    <th className="px-4 py-3 font-medium text-right">Spread (P90-P10)</th>
-                    <th className="px-4 py-3 font-medium text-right text-orange-600">Risk Gap (P90-P50)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {percentileTableData.map((row) => (
-                    <tr key={row.category} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-medium">
-                        {row.category}
-                        {isActionableCategory(row.category) && <span className="ml-2 text-emerald-500" title="Savable Category">🟢</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right text-emerald-600">{row.P10.toFixed(1)}h</td>
-                      <td className="px-4 py-3 text-right text-primary font-medium">{row.P50.toFixed(1)}h</td>
-                      <td className="px-4 py-3 text-right text-destructive font-bold">{row.P90.toFixed(1)}h</td>
-                      <td className="px-4 py-3 text-right">{row.spread.toFixed(1)}h</td>
-                      <td className="px-4 py-3 text-right text-orange-600 font-medium">+{row.riskGap.toFixed(1)}h</td>
-                    </tr>
-                  ))}
-                  {percentileTableData.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No percentile data available.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Pareto Analysis */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
@@ -396,28 +350,6 @@ export default function AdvancedAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Rankings: Top Cost Wells */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 10 Wells by Cost Impact</CardTitle>
-            <CardDescription>Locations requiring immediate operational focus.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topWellsBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
-                <RechartsTooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
-                  cursor={{fill: 'var(--color-muted)'}}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="cost" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Cost Impact" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
 
         {/* Trend: Monthly Cost Impact */}
         <Card className="col-span-1 lg:col-span-2">

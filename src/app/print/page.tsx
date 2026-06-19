@@ -3,18 +3,12 @@
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ExecutiveCommandCenter from "@/app/page"
-import AdvancedAnalytics from "@/app/advanced-analytics/page"
-import WellAnalytics from "@/app/well-analytics/page"
-import RootCauseAnalysis from "@/app/root-cause/page"
-import RiskAnalysis from "@/app/risk/page"
+import NPTAnalytics from "@/app/npt-analytics/page"
 import InterventionIntelligence from "@/app/intervention/page"
 
 const componentMap: Record<string, any> = {
   '/': ExecutiveCommandCenter,
-  '/advanced-analytics': AdvancedAnalytics,
-  '/well-analytics': WellAnalytics,
-  '/root-cause': RootCauseAnalysis,
-  '/risk': RiskAnalysis,
+  '/npt-analytics': NPTAnalytics,
   '/intervention': InterventionIntelligence,
 }
 

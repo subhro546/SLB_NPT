@@ -20,21 +20,14 @@ export async function POST(req: Request) {
 Your job is to identify user intent based on their latest query and recent conversation context.
 
 Available intents:
-* overall_business_health
-* executive_summary
-* identify_cost_drivers
-* identify_savings_opportunities
-* compare_assets
-* compare_rigs
-* compare_onshore_offshore
-* identify_high_risk_rigs
-* analyze_npt_categories
-* rank_assets
-* rank_rigs
+* intervention_performance
+* savings_potential
+* asset_intervention_comparison
+* recommend_intervention
+* estimate_annual_savings
 * general_conversation
 
 CRITICAL RULES:
-- Never map unknown questions to executive_summary.
 - Never guess.
 - Return ONLY valid JSON. No markdown wrappers.
 
@@ -45,16 +38,22 @@ Output Format:
 }
 
 Examples:
-User: "How well is ONGC doing?"
-{"intent":"overall_business_health","confidence":0.97}
+User: "Which intervention generated maximum savings?"
+{"intent":"intervention_performance","confidence":0.97}
 
-User: "Where are we losing money?"
-{"intent":"identify_cost_drivers","confidence":0.95}
+User: "Where can we save the most additional time?"
+{"intent":"savings_potential","confidence":0.95}
+
+User: "Estimate annual savings potential"
+{"intent":"estimate_annual_savings","confidence":0.99}
+
+User: "Compare intervention effectiveness across assets."
+{"intent":"asset_intervention_comparison","confidence":0.98}
+
+User: "What intervention should management prioritize next?"
+{"intent":"recommend_intervention","confidence":0.99}
 
 User: "Hello"
-{"intent":"general_conversation","confidence":0.99}
-
-User: "Are you listening?"
 {"intent":"general_conversation","confidence":0.99}
 
 ---

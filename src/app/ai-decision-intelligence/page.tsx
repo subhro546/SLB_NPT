@@ -5,17 +5,11 @@ import { useFilteredData } from "@/hooks/useFilteredData"
 import { useAppStore } from "@/store/useAppStore"
 import { 
   summarizeCurrentView,
-  compareAssets,
-  compareRigs,
-  compareOnshoreOffshore,
-  identifyCostDrivers,
-  identifySavingsOpportunities,
-  identifyHighRiskRigs,
-  rankAssets,
-  rankRigs,
-  analyzeNPTCategories,
-  overallBusinessHealth,
-  executiveSummary
+  interventionPerformance,
+  savingsPotential,
+  assetInterventionComparison,
+  recommendIntervention,
+  estimateAnnualSavings
 } from "@/lib/analytics-engine"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -56,25 +50,11 @@ export default function AIDecisionIntelligence() {
 
   const runAnalytics = (action: string, extraArgs?: any) => {
     switch (action) {
-      case 'overall_business_health': return overallBusinessHealth(data);
-      case 'executive_summary': return executiveSummary(data);
-      case 'compare_assets':
-        const assets = Array.from(new Set(data.map(d => d.Asset).filter(Boolean)));
-        const a1 = extraArgs?.asset1 || assets[0] || 'Unknown';
-        const a2 = extraArgs?.asset2 || assets[1] || 'Unknown';
-        return compareAssets(data, a1, a2);
-      case 'compare_rigs':
-        const rigs = Array.from(new Set(data.map(d => d.RigName).filter(Boolean)));
-        const r1 = extraArgs?.rig1 || rigs[0] || 'Unknown';
-        const r2 = extraArgs?.rig2 || rigs[1] || 'Unknown';
-        return compareRigs(data, r1, r2);
-      case 'compare_onshore_offshore': return compareOnshoreOffshore(data);
-      case 'identify_cost_drivers': return identifyCostDrivers(data);
-      case 'identify_savings_opportunities': return identifySavingsOpportunities(data);
-      case 'identify_high_risk_rigs': return identifyHighRiskRigs(data);
-      case 'rank_assets': return rankAssets(data);
-      case 'rank_rigs': return rankRigs(data);
-      case 'analyze_npt_categories': return analyzeNPTCategories(data);
+      case 'intervention_performance': return interventionPerformance(data);
+      case 'savings_potential': return savingsPotential(data);
+      case 'asset_intervention_comparison': return assetInterventionComparison(data);
+      case 'recommend_intervention': return recommendIntervention(data);
+      case 'estimate_annual_savings': return estimateAnnualSavings(data);
       case 'general_conversation':
       case 'clarification_required':
         return null;
@@ -209,40 +189,39 @@ export default function AIDecisionIntelligence() {
   }
 
   const smartPrompts = [
-    "Where can I save more money?",
-    "Which rig has the highest cost impact?",
-    "Compare offshore and onshore performance.",
-    "Which asset should management prioritize?",
-    "What are the top NPT contributors?",
-    "Summarize the current view."
+    "Which intervention generated maximum savings?",
+    "Where can we save the most additional time?",
+    "Compare intervention effectiveness across assets.",
+    "What intervention should management prioritize next?",
+    "Estimate annual savings potential."
   ]
 
   return (
     <div className="flex flex-col p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold tracking-tight">RTDMMA Decision Intelligence Copilot</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Intervention Copilot</h1>
         <p className="text-muted-foreground">Powered by Qwen 2.5 7B + Deterministic Analytics</p>
       </div>
 
       {/* Section 2: Analysis Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2 shrink-0">
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summarize_current_view', 'Executive Summary')}>
-          <span className="font-semibold text-xs text-blue-500">Executive Summary</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('intervention_performance', 'Top Interventions')}>
+          <span className="font-semibold text-xs text-blue-500">Top Interventions</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_cost_drivers', 'Cost Analysis')}>
-          <span className="font-semibold text-xs text-green-500">Cost Analysis</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('savings_potential', 'Savings Potential')}>
+          <span className="font-semibold text-xs text-green-500">Savings Potential</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_savings_opportunities', 'Savings Opportunities')}>
-          <span className="font-semibold text-xs text-purple-500">Savings Opportunities</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('asset_intervention_comparison', 'Asset Comparison')}>
+          <span className="font-semibold text-xs text-purple-500">Asset Comparison</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('compare_assets', 'Asset Comparison')}>
-          <span className="font-semibold text-xs text-amber-500">Asset Comparison</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('recommend_intervention', 'Recommended Action')}>
+          <span className="font-semibold text-xs text-amber-500">Recommended Action</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('compare_onshore_offshore', 'Offshore vs Onshore')}>
-          <span className="font-semibold text-xs text-indigo-500">Offshore vs Onshore</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('estimate_annual_savings', 'Annual Projections')}>
+          <span className="font-semibold text-xs text-indigo-500">Annual Projections</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('identify_high_risk_rigs', 'High Risk Rigs')}>
-          <span className="font-semibold text-xs text-rose-500">High Risk Rigs</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summarize_current_view', 'View Summary')}>
+          <span className="font-semibold text-xs text-rose-500">View Summary</span>
         </Button>
       </div>
 
@@ -323,7 +302,7 @@ export default function AIDecisionIntelligence() {
             </div>
             <form onSubmit={handleQuery} className="flex gap-2">
               <Input 
-                placeholder="Ask where to save money, compare assets, or rank cost drivers..." 
+                placeholder="Ask about intervention effectiveness or estimate annual savings..." 
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="flex-1 shadow-sm"

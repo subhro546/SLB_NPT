@@ -2,166 +2,93 @@ import { NPTRecord } from "@/store/useAppStore";
 import { isActionableCategory } from "./constants";
 
 export function summarizeCurrentView(records: NPTRecord[]) {
-  const totalCost = records.reduce((sum, r) => sum + r.CostImpact, 0);
-  const totalHours = records.reduce((sum, r) => sum + r.NPTHours, 0);
-  const totalEvents = records.length;
-  const savingsOpportunity = records.reduce((sum, r) => sum + r.CostSaved, 0);
-  
+  const interventionRecords = records.filter(r => r.TimeSavedHours > 0);
   return {
-    total_cost_impact_usd: totalCost,
-    total_downtime_hours: totalHours,
-    total_npt_events: totalEvents,
-    savings_opportunity_usd: savingsOpportunity
+    total_interventions_applied: interventionRecords.length,
+    total_time_saved_hours: records.reduce((sum, r) => sum + r.TimeSavedHours, 0),
+    total_cost_saved_usd: records.reduce((sum, r) => sum + r.CostSaved, 0)
   };
 }
 
-export function overallBusinessHealth(records: NPTRecord[]) {
-  const totalCost = records.reduce((sum, r) => sum + r.CostImpact, 0);
-  const totalHours = records.reduce((sum, r) => sum + r.NPTHours, 0);
-  const totalEvents = records.length;
-  const savingsOpportunity = records.reduce((sum, r) => sum + r.CostSaved, 0);
+export function interventionPerformance(records: NPTRecord[]) {
+  const categoryStats = records.reduce((acc, curr) => {
+    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0, Apps: 0 };
+    acc[curr.NPTCategory].NPTHours += curr.NPTHours;
+    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours;
+    acc[curr.NPTCategory].CostSaved += curr.CostSaved;
+    acc[curr.NPTCategory].CostImpact += curr.CostImpact;
+    if (curr.TimeSavedHours > 0) acc[curr.NPTCategory].Apps += 1;
+    return acc;
+  }, {} as Record<string, any>);
+
+  const actionableCats = Object.values(categoryStats).filter(c => isActionableCategory(c.name));
+  const topSaved = actionableCats.sort((a, b) => b.CostSaved - a.CostSaved)[0];
   
-  const catCosts = records.reduce((acc, r) => { acc[r.NPTCategory] = (acc[r.NPTCategory] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const topCat = Object.entries(catCosts).sort((a, b) => b[1] - a[1])[0] || ['None', 0];
-
-  const rigHours = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + r.NPTHours; return acc; }, {} as Record<string, number>);
-  const topRig = Object.entries(rigHours).sort((a, b) => b[1] - a[1])[0] || ['None', 0];
-
   return {
-    total_cost_impact_usd: totalCost,
-    total_npt_events: totalEvents,
-    total_downtime_hours: totalHours,
-    potential_savings_usd: savingsOpportunity,
-    top_cost_category: topCat[0],
-    biggest_risk_rig: topRig[0]
+    top_intervention: topSaved?.name || "None",
+    top_intervention_cost_saved_usd: topSaved?.CostSaved || 0,
+    top_intervention_time_saved_hours: topSaved?.TimeSaved || 0,
+    top_intervention_success_rate: topSaved && topSaved.NPTHours > 0 ? (topSaved.TimeSaved / topSaved.NPTHours) * 100 : 0
   };
 }
 
-export function executiveSummary(records: NPTRecord[]) {
-  return overallBusinessHealth(records); // same metrics, LLM prompt will vary the text
-}
+export function savingsPotential(records: NPTRecord[]) {
+  const categoryStats = records.reduce((acc, curr) => {
+    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0 };
+    acc[curr.NPTCategory].NPTHours += curr.NPTHours;
+    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours;
+    acc[curr.NPTCategory].CostSaved += curr.CostSaved;
+    acc[curr.NPTCategory].CostImpact += curr.CostImpact;
+    return acc;
+  }, {} as Record<string, any>);
 
-export function compareAssets(records: NPTRecord[], asset1: string, asset2: string) {
-  const a1Records = records.filter(r => r.Asset.toLowerCase() === asset1.toLowerCase());
-  const a2Records = records.filter(r => r.Asset.toLowerCase() === asset2.toLowerCase());
-  
+  const actionableCats = Object.values(categoryStats).filter(c => isActionableCategory(c.name));
+  const topOpp = actionableCats.sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
+
   return {
-    [asset1]: {
-      cost_impact_usd: a1Records.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: a1Records.reduce((sum, r) => sum + r.NPTHours, 0),
-      events: a1Records.length
-    },
-    [asset2]: {
-      cost_impact_usd: a2Records.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: a2Records.reduce((sum, r) => sum + r.NPTHours, 0),
-      events: a2Records.length
-    }
+    highest_potential_intervention: topOpp?.name || "None",
+    potential_cost_savings_remaining_usd: topOpp ? topOpp.CostImpact - topOpp.CostSaved : 0,
+    potential_time_savings_remaining_hours: topOpp ? topOpp.NPTHours - topOpp.TimeSaved : 0
   };
 }
 
-export function compareRigs(records: NPTRecord[], rig1: string, rig2: string) {
-  const r1Records = records.filter(r => r.RigName.toLowerCase() === rig1.toLowerCase());
-  const r2Records = records.filter(r => r.RigName.toLowerCase() === rig2.toLowerCase());
-  
-  return {
-    [rig1]: {
-      cost_impact_usd: r1Records.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: r1Records.reduce((sum, r) => sum + r.NPTHours, 0),
-      events: r1Records.length
-    },
-    [rig2]: {
-      cost_impact_usd: r2Records.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: r2Records.reduce((sum, r) => sum + r.NPTHours, 0),
-      events: r2Records.length
-    }
-  };
-}
+export function assetInterventionComparison(records: NPTRecord[]) {
+  const assetStats = records.reduce((acc, curr) => {
+    if (!acc[curr.Asset]) acc[curr.Asset] = { asset: curr.Asset, TimeSaved: 0, CostSaved: 0, NPTHours: 0 };
+    acc[curr.Asset].TimeSaved += curr.TimeSavedHours;
+    acc[curr.Asset].CostSaved += curr.CostSaved;
+    acc[curr.Asset].NPTHours += curr.NPTHours;
+    return acc;
+  }, {} as Record<string, any>);
 
-export function compareOnshoreOffshore(records: NPTRecord[]) {
-  const offshore = records.filter(r => r.Well_Type === 'Offshore');
-  const onshore = records.filter(r => r.Well_Type === 'Onshore' || r.Well_Type === 'Land');
+  const sortedAssets = Object.values(assetStats).sort((a, b) => b.CostSaved - a.CostSaved).slice(0, 3);
   
-  return {
-    offshore: {
-      cost_impact_usd: offshore.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: offshore.reduce((sum, r) => sum + r.NPTHours, 0)
-    },
-    onshore: {
-      cost_impact_usd: onshore.reduce((sum, r) => sum + r.CostImpact, 0),
-      downtime_hours: onshore.reduce((sum, r) => sum + r.NPTHours, 0)
-    }
-  };
-}
-
-export function identifyCostDrivers(records: NPTRecord[]) {
-  const rigCosts = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const topRig = Object.entries(rigCosts).sort((a, b) => b[1] - a[1])[0] || ['Unknown', 0];
-  
-  const catCosts = records.reduce((acc, r) => { acc[r.NPTCategory] = (acc[r.NPTCategory] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const topCat = Object.entries(catCosts).sort((a, b) => b[1] - a[1])[0] || ['Unknown', 0];
-  
-  return {
-    highest_cost_rig: topRig[0],
-    highest_cost_rig_usd: topRig[1],
-    highest_cost_category: topCat[0],
-    highest_cost_category_usd: topCat[1]
-  };
-}
-
-export function identifySavingsOpportunities(records: NPTRecord[]) {
-  const avoidableCost = records.reduce((sum, r) => sum + r.CostSaved, 0);
-  const totalCost = records.reduce((sum, r) => sum + r.CostImpact, 0);
-  
-  const actionableRecords = records.filter(r => isActionableCategory(r.NPTCategory));
-  const catSavings = actionableRecords.reduce((acc, r) => { acc[r.NPTCategory] = (acc[r.NPTCategory] || 0) + r.CostSaved; return acc; }, {} as Record<string, number>);
-  const topSavingsCat = Object.entries(catSavings).sort((a, b) => b[1] - a[1])[0] || ['None', 0];
-  
-  return {
-    total_savings_opportunity_usd: avoidableCost,
-    percent_of_total_cost: totalCost > 0 ? (avoidableCost / totalCost) * 100 : 0,
-    top_savings_category: topSavingsCat[0],
-    top_savings_category_usd: topSavingsCat[1]
-  };
-}
-
-export function identifyHighRiskRigs(records: NPTRecord[]) {
-  const rigEvents = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + 1; return acc; }, {} as Record<string, number>);
-  const topRigEvent = Object.entries(rigEvents).sort((a, b) => b[1] - a[1])[0] || ['Unknown', 0];
-  
-  const rigHours = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + r.NPTHours; return acc; }, {} as Record<string, number>);
-  const topRigHour = Object.entries(rigHours).sort((a, b) => b[1] - a[1])[0] || ['Unknown', 0];
-  
-  return {
-    most_frequent_failure_rig: topRigEvent[0],
-    failure_events: topRigEvent[1],
-    highest_downtime_rig: topRigHour[0],
-    downtime_hours: topRigHour[1]
-  };
-}
-
-export function rankAssets(records: NPTRecord[]) {
-  const assetCosts = records.reduce((acc, r) => { acc[r.Asset] = (acc[r.Asset] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const sorted = Object.entries(assetCosts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  
-  return sorted.map((s, i) => ({ rank: i + 1, asset: s[0], cost_impact_usd: s[1] }));
-}
-
-export function rankRigs(records: NPTRecord[]) {
-  const rigCosts = records.reduce((acc, r) => { acc[r.RigName] = (acc[r.RigName] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const sorted = Object.entries(rigCosts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  
-  return sorted.map((s, i) => ({ rank: i + 1, rig: s[0], cost_impact_usd: s[1] }));
-}
-
-export function analyzeNPTCategories(records: NPTRecord[]) {
-  const catCosts = records.reduce((acc, r) => { acc[r.NPTCategory] = (acc[r.NPTCategory] || 0) + r.CostImpact; return acc; }, {} as Record<string, number>);
-  const totalCost = records.reduce((sum, r) => sum + r.CostImpact, 0);
-  const sorted = Object.entries(catCosts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  
-  return sorted.map((s, i) => ({ 
-    rank: i + 1, 
-    category: s[0], 
-    cost_impact_usd: s[1],
-    contribution_percent: totalCost > 0 ? (s[1] / totalCost) * 100 : 0
+  return sortedAssets.map(a => ({
+    asset: a.asset,
+    cost_saved_usd: a.CostSaved,
+    time_saved_hours: a.TimeSaved,
+    efficiency_percentage: a.NPTHours > 0 ? (a.TimeSaved / a.NPTHours) * 100 : 0
   }));
+}
+
+export function recommendIntervention(records: NPTRecord[]) {
+  return savingsPotential(records); 
+}
+
+export function estimateAnnualSavings(records: NPTRecord[]) {
+  const monthsSet = new Set(records.map(r => r.StartDate ? r.StartDate.substring(0, 7) : ''));
+  // Remove empty string if present
+  monthsSet.delete('');
+  const months = monthsSet.size;
+  
+  const totalCostSaved = records.reduce((sum, r) => sum + r.CostSaved, 0);
+  const totalTimeSaved = records.reduce((sum, r) => sum + r.TimeSavedHours, 0);
+
+  const monthsDivisor = months > 0 ? months : 1;
+  return {
+    months_in_dataset: months,
+    monthly_average_cost_saved_usd: totalCostSaved / monthsDivisor,
+    projected_annual_cost_saved_usd: (totalCostSaved / monthsDivisor) * 12,
+    projected_annual_time_saved_hours: (totalTimeSaved / monthsDivisor) * 12
+  };
 }

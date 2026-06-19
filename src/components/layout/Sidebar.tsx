@@ -18,11 +18,8 @@ import {
 
 export const navigation = [
   { name: 'Command Center', href: '/', icon: LayoutDashboard },
-  { name: 'Advanced Analytics', href: '/advanced-analytics', icon: LineChart },
-  { name: 'Well Analytics', href: '/well-analytics', icon: Activity },
-  { name: 'Root Cause Analysis', href: '/root-cause', icon: Crosshair },
-  { name: 'Risk Analysis', href: '/risk', icon: Target },
   { name: 'Intervention Intelligence', href: '/intervention', icon: TrendingDown },
+  { name: 'NPT Analytics', href: '/npt-analytics', icon: LineChart },
   { name: 'AI Decision Intelligence', href: '/ai-decision-intelligence', icon: BrainCircuit },
   { name: 'Data Explorer', href: '/data-explorer', icon: Database },
   { name: 'Data Ingestion', href: '/upload', icon: Upload },

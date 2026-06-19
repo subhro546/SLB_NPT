@@ -5,12 +5,10 @@ import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useAppStore } from "@/store/useAppStore"
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend
 } from 'recharts'
 import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
-import { FileSpreadsheet, Trophy, Target, Award } from "lucide-react"
-import Link from "next/link"
+import { FileSpreadsheet, Trophy, Target, Award, ArrowRight, Lightbulb, TrendingUp } from "lucide-react"
 
 export default function InterventionIntelligence() {
   const data = useFilteredData()
@@ -24,188 +22,240 @@ export default function InterventionIntelligence() {
           <FileSpreadsheet className="h-16 w-16 text-primary" />
         </div>
         <h2 className="text-2xl font-bold mb-2">No Data Available</h2>
-        <p className="text-muted-foreground mb-6 max-w-md">
-          Please upload a dataset to view Intervention Intelligence.
-        </p>
-        <Link href="/upload" className="bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors">
-          Go to Data Ingestion
-        </Link>
       </div>
     )
   }
 
-  // Data Aggregations
-  const categorySavings = data.reduce((acc, curr) => {
-    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, TimeSaved: 0, CostSaved: 0, CostImpact: 0 }
-    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours
-    acc[curr.NPTCategory].CostSaved += curr.CostSaved
-    acc[curr.NPTCategory].CostImpact += curr.CostImpact
-    return acc
-  }, {} as Record<string, { name: string, TimeSaved: number, CostSaved: number, CostImpact: number }>)
-
-  const categorySavingsData = Object.values(categorySavings)
-    .filter(cat => isActionableCategory(cat.name)) // Only show actionable categories
-    .sort((a, b) => b.CostImpact - a.CostImpact) // Sort by impact
-    .slice(0, 10)
-
-  const wellSavings = data.reduce((acc, curr) => {
-    if (!acc[curr.Well]) acc[curr.Well] = { name: curr.Well, CostSaved: 0 }
-    acc[curr.Well].CostSaved += curr.CostSaved
-    return acc
-  }, {} as Record<string, { name: string, CostSaved: number }>)
-
-  const topSavingWellsData = Object.values(wellSavings)
-    .sort((a, b) => b.CostSaved - a.CostSaved)
-    .slice(0, 10)
-
-  const responsibleSavings = data.reduce((acc, curr) => {
-    if (!acc[curr.ResponsibleParty]) acc[curr.ResponsibleParty] = { name: curr.ResponsibleParty, CostSaved: 0 }
-    acc[curr.ResponsibleParty].CostSaved += curr.CostSaved
-    return acc
-  }, {} as Record<string, { name: string, CostSaved: number }>)
-
-  const topInterventionsData = Object.values(responsibleSavings)
-    .sort((a, b) => b.CostSaved - a.CostSaved)
-    .slice(0, 10)
-
-  // Monthly Savings Trend
-  const monthlyDataMap = data.reduce((acc, curr) => {
-    if (!curr.StartDate) return acc;
-    const date = new Date(curr.StartDate);
-    if (isNaN(date.getTime())) return acc;
-    
-    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    if (!acc[month]) acc[month] = { month, CostSaved: 0, TimeSaved: 0 };
-    acc[month].CostSaved += curr.CostSaved;
-    acc[month].TimeSaved += curr.TimeSavedHours;
+  // 1. Intervention Performance Dashboard Metrics
+  const categoryStats = data.reduce((acc, curr) => {
+    if (!acc[curr.NPTCategory]) {
+      acc[curr.NPTCategory] = { name: curr.NPTCategory, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0, Apps: 0 };
+    }
+    acc[curr.NPTCategory].NPTHours += curr.NPTHours;
+    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours;
+    acc[curr.NPTCategory].CostSaved += curr.CostSaved;
+    acc[curr.NPTCategory].CostImpact += curr.CostImpact;
+    if (curr.TimeSavedHours > 0) acc[curr.NPTCategory].Apps += 1;
     return acc;
-  }, {} as Record<string, { month: string, CostSaved: number, TimeSaved: number }>);
+  }, {} as Record<string, any>);
+
+  const interventions = Object.values(categoryStats)
+    .filter(cat => isActionableCategory(cat.name) && cat.TimeSaved > 0)
+    .map(cat => ({
+      ...cat,
+      SuccessRate: cat.NPTHours > 0 ? (cat.TimeSaved / cat.NPTHours) * 100 : 0,
+      ROI: cat.CostImpact > 0 ? (cat.CostSaved / cat.CostImpact) * 100 : 0
+    }))
+    .sort((a, b) => b.CostSaved - a.CostSaved);
+
+  // 4. Savings Waterfall Data
+  let currentWaterfall = 0;
+  const waterfallData = interventions.map(inv => {
+    const start = currentWaterfall;
+    currentWaterfall += inv.CostSaved;
+    return {
+      name: formatActionableCategory(inv.name),
+      start,
+      end: currentWaterfall,
+      value: inv.CostSaved,
+      range: [start, currentWaterfall]
+    }
+  });
+
+  // 6. Intervention Heatmap Data (Rows: Interventions, Columns: Assets)
+  const uniqueAssets = Array.from(new Set(data.map(d => d.Asset).filter(Boolean))).sort();
+  const heatmapData = interventions.map(inv => {
+    const assetSavings = uniqueAssets.reduce((acc, asset) => {
+      acc[asset] = data
+        .filter(d => d.NPTCategory === inv.name && d.Asset === asset)
+        .reduce((sum, d) => sum + d.TimeSavedHours, 0);
+      return acc;
+    }, {} as Record<string, number>);
+    return { name: inv.name, ...assetSavings };
+  });
+  const maxHeatmapValue = Math.max(...heatmapData.flatMap(h => uniqueAssets.map(a => (h as any)[a] || 0)), 1);
+
+  // 8. Recommended Next Intervention
+  const highestUnrecoveredCost = Object.values(categoryStats)
+    .filter(cat => isActionableCategory(cat.name))
+    .sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
   
-  const monthlyTrendData = Object.values(monthlyDataMap).sort((a: any, b: any) => a.month.localeCompare(b.month));
+  const recommendationText = highestUnrecoveredCost 
+    ? `"${highestUnrecoveredCost.name}" remains the highest contributor to unmitigated financial loss (${formatCurrency(highestUnrecoveredCost.CostImpact - highestUnrecoveredCost.CostSaved, true)}). Interventions targeting this category have historically achieved a ${((highestUnrecoveredCost.TimeSaved / highestUnrecoveredCost.NPTHours) * 100 || 0).toFixed(1)}% recovery rate. Recommend prioritizing dedicated mitigation strategies for this category across all underperforming assets.`
+    : "No outstanding intervention recommendations at this time.";
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Intervention Intelligence</h1>
-          <p className="text-muted-foreground mt-1">Measure and analyze the financial impact of successful interventions.</p>
+          <p className="text-muted-foreground mt-1">Primary module for tracking and comparing intervention performance.</p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Top Saving Wells Leaderboard */}
-        <Card className="col-span-1 border-emerald-600/20 shadow-sm">
-          <CardHeader className="bg-emerald-600/5 pb-3">
-            <CardTitle className="flex items-center gap-2 text-emerald-600">
-              <Trophy className="h-5 w-5" />
-              Top Saving Wells
-            </CardTitle>
-            <CardDescription>Highest financial recovery through intervention</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-4">
-              {topSavingWellsData.map((well, index) => (
-                <div key={well.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                      index === 0 ? 'bg-amber-100 text-amber-700' : 
-                      index === 1 ? 'bg-slate-200 text-slate-700' :
-                      index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-sm">{well.name}</span>
-                  </div>
-                  <span className="font-semibold text-emerald-600 text-sm">
-                    {formatCurrency(well.CostSaved, true)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <Card className="bg-emerald-500/5 border-emerald-500/20 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-emerald-600">
+            <Lightbulb className="h-5 w-5" />
+            Recommended Next Intervention
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm md:text-base font-medium leading-relaxed">
+            {recommendationText}
+          </p>
+        </CardContent>
+      </Card>
 
-        {/* Top Interventions Leaderboard */}
-        <Card className="col-span-1 border-primary/20 shadow-sm">
-          <CardHeader className="bg-primary/5 pb-3">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <Award className="h-5 w-5" />
-              Top Intervening Parties
-            </CardTitle>
-            <CardDescription>Highest financial recovery by responsible party</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-4">
-              {topInterventionsData.map((party, index) => (
-                <div key={party.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                      index === 0 ? 'bg-amber-100 text-amber-700' : 
-                      index === 1 ? 'bg-slate-200 text-slate-700' :
-                      index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-sm truncate max-w-[120px]" title={party.name}>
-                      {party.name}
-                    </span>
-                  </div>
-                  <span className="font-semibold text-primary text-sm">
-                    {formatCurrency(party.CostSaved, true)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* 1. Performance Dashboard Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Intervention Performance Dashboard</CardTitle>
+          <CardDescription>Comprehensive metrics for all successful interventions.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Intervention / Category</th>
+                  <th className="px-4 py-3 font-medium text-right"># Apps</th>
+                  <th className="px-4 py-3 font-medium text-right">Time Saved</th>
+                  <th className="px-4 py-3 font-medium text-right">Cost Saved</th>
+                  <th className="px-4 py-3 font-medium text-right">Success Rate</th>
+                  <th className="px-4 py-3 font-medium text-right">ROI Score</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {interventions.map((inv) => (
+                  <tr key={inv.name} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 font-medium">{formatActionableCategory(inv.name)}</td>
+                    <td className="px-4 py-3 text-right">{inv.Apps}</td>
+                    <td className="px-4 py-3 text-right">{inv.TimeSaved.toFixed(1)}h</td>
+                    <td className="px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(inv.CostSaved, true)}</td>
+                    <td className="px-4 py-3 text-right">{inv.SuccessRate.toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-right">{inv.ROI.toFixed(1)}%</td>
+                  </tr>
+                ))}
+                {interventions.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No successful interventions recorded.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Target vs Actual (Placeholder for Intervention Goals) */}
-        <Card className="col-span-1">
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* 2. Top Intervention Leaderboard */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Savings by Category
+              <Trophy className="h-5 w-5 text-amber-500" />
+              Leaderboard: Top Interventions
             </CardTitle>
-            <CardDescription>Financial impact recovered per category</CardDescription>
+            <CardDescription>Ranked by absolute financial value recovered.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categorySavingsData} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={interventions.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} />
-                <YAxis dataKey="name" type="category" interval={0} width={80} tick={{ fontSize: 10 }} tickFormatter={formatActionableCategory} />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 10 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 10 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Bar isAnimationActive={false} dataKey="CostImpact" name="Cost Impact" fill="var(--color-destructive)" radius={[0, 4, 4, 0]} />
-                <Bar isAnimationActive={false} dataKey="CostSaved" name="Cost Saved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="CostSaved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} name="Value Saved" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* 4. Savings Waterfall Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Cumulative Savings Waterfall
+            </CardTitle>
+            <CardDescription>Cumulative financial contribution of each intervention.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={waterfallData.slice(0, 8)} margin={{ top: 5, right: 10, left: 10, bottom: 25 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={0} tick={{ fontSize: 10 }} />
+                <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 10 }} width={60} />
+                <Tooltip 
+                  formatter={(value: any) => formatCurrency(Number(value[1] - value[0]))}
+                  cursor={{fill: 'var(--color-muted)'}}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar dataKey="range" fill="var(--color-blue-500)" radius={[4, 4, 0, 0]} name="Cumulative Savings">
+                  {waterfallData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === waterfallData.length - 1 ? 'var(--color-emerald-500)' : 'var(--color-blue-500)'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
+      {/* 6. Intervention Heatmap */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Savings Trend</CardTitle>
-          <CardDescription>Financial impact recovered over time</CardDescription>
+          <CardTitle>Asset vs Intervention Heatmap</CardTitle>
+          <CardDescription>Time Saved (Hours) across all assets.</CardDescription>
         </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 12 }} />
-              <Tooltip 
-                formatter={(value: any) => formatCurrency(Number(value))}
-                contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)' }}
-              />
-              <Line isAnimationActive={false} type="monotone" dataKey="CostSaved" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium w-48 sticky left-0 bg-card z-10 border-r border-b">Intervention</th>
+                  {uniqueAssets.map(asset => (
+                    <th key={asset} className="px-4 py-2 font-medium text-center border-b min-w-[100px]">{asset}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {heatmapData.map((inv) => (
+                  <tr key={inv.name} className="border-b last:border-0">
+                    <td className="px-4 py-3 font-medium sticky left-0 bg-card z-10 border-r truncate" title={formatActionableCategory(inv.name)}>
+                      {formatActionableCategory(inv.name)}
+                    </td>
+                    {uniqueAssets.map(asset => {
+                      const val = (inv as any)[asset] || 0;
+                      const intensity = val > 0 ? 0.1 + (val / maxHeatmapValue) * 0.9 : 0;
+                      return (
+                        <td key={asset} className="p-1 text-center border-r last:border-0">
+                          <div 
+                            className="w-full h-8 flex items-center justify-center rounded text-xs font-semibold"
+                            style={{ 
+                              backgroundColor: val > 0 ? `rgba(16, 185, 129, ${intensity})` : 'transparent',
+                              color: intensity > 0.5 ? 'white' : 'inherit'
+                            }}
+                          >
+                            {val > 0 ? val.toFixed(1) : '-'}
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+                {heatmapData.length === 0 && (
+                  <tr>
+                    <td colSpan={uniqueAssets.length + 1} className="px-4 py-8 text-center text-muted-foreground">No intervention data available.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>
