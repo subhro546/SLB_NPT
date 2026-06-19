@@ -14,25 +14,18 @@ datasource db {
 
 model NPTRecord {
   id               Int      @id @default(autoincrement())
-  borehole         String
-  motherBorehole   String?
-  fieldName        String
-  spudDate         DateTime?
-  section          String?
-  startDate        DateTime
-  endDate          DateTime
+  eventNo          Int
+  rigName          String
+  wellId           String
+  wellCategory     String
+  companyCode      String
+  cde              String?
+  depth            Float
+  onshoreOffshore  String
+  category         String
   hours            Float
-  days             Float
-  code             String
-  subCode          String?
-  responsible      String
-  description      String?
-  asset            String?
-  rigName          String?
-  wellType         String?
-  odrUsd           Float?
-  timeSavedDays    Float
-  timeSavedHours   Float
+  timeSaved        Float
+  costUsdPerDay    Float
   costImpact       Float
   costSaved        Float
 }
