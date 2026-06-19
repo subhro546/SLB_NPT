@@ -18,7 +18,7 @@ import { PrintDialog } from "@/components/PrintDialog"
 
 export function Topbar() {
   const pathname = usePathname()
-  const { currency, setCurrency } = useAppStore()
+  const { currency, setCurrency, savingsMethod, setSavingsMethod } = useAppStore()
   const { theme, setTheme } = useTheme()
 
   const currencies: { value: Currency; label: string }[] = [
@@ -78,6 +78,18 @@ export function Topbar() {
       
       <div className="flex items-center gap-4">
 
+
+        <div className="flex items-center gap-2">
+          <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
+            <SelectTrigger className="w-[110px] sm:w-[150px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 text-xs sm:text-sm">
+              <SelectValue placeholder="Savings Method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="method1">Method 1 (DB)</SelectItem>
+              <SelectItem value="method2">Method 2 (3 Days)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="flex items-center gap-2">
           <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>

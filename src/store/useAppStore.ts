@@ -46,6 +46,9 @@ export interface GlobalFilters {
 interface AppState {
   currency: Currency;
   setCurrency: (c: Currency) => void;
+  savingsMethod: 'method1' | 'method2';
+  setSavingsMethod: (m: 'method1' | 'method2') => void;
+  
   
   datasets: Dataset[];
   activeDatasetId: string | null;
@@ -74,6 +77,8 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       currency: 'USD',
       setCurrency: (c) => set({ currency: c }),
+      savingsMethod: 'method1',
+      setSavingsMethod: (m) => set({ savingsMethod: m }),
       
       datasets: [],
       activeDatasetId: null,
