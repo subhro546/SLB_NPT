@@ -31,7 +31,7 @@ export default function UploadPage() {
         
         // Filter out empty rows that Excel sometimes pads out to 1,048,576
         const validJson = rawJson.filter((row: any) => {
-          return row['Borehole'] || row['Well'] || row['Well Name'] || row['Rig'] || row['Rig Name'] || row['Asset'] || row['Code'] || row['NPT Category'];
+          return row['Event No'] || row['WellID'] || row['Rig Name'];
         });
         
         const originalCats = new Set<string>();
@@ -40,46 +40,34 @@ export default function UploadPage() {
 
         // Validation and Transformation
         const records: NPTRecord[] = validJson.map((row: any, index) => {
-          const nptHours = Number(row['Hours'] || row['NPT Hours'] || row['NPTHours']) || 0
-          let timeSavedHours = Number(row['Time Saved (hours)'] || row['Time Saved Hours'] || row['TimeSavedHours']) || 0
-          
-          // Inject random Time Saved between 20-50% if missing
-          if (timeSavedHours === 0 && nptHours > 0) {
-            const randomMultiplier = 0.2 + (Math.random() * 0.3);
-            timeSavedHours = nptHours * randomMultiplier;
-          }
+          const hours = Number(row['Hours']) || 0;
+          const timeSaved = Number(row['Time Saved']) || 0;
+          const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
 
-          const rawCategory = String(row['Code'] || row['NPT Category'] || row['NPTCategory'] || 'Unknown')
-          const normalizedCat = normalizeCategory(rawCategory)
+          const rawCategory = String(row['Category'] || 'Unknown');
+          const normalizedCat = normalizeCategory(rawCategory);
           
-          const rawSubCategory = String(row['NPT Sub Category'] || row['NPTSubCategory'] || 'Unknown')
-          const normalizedSubCat = normalizeCategory(rawSubCategory)
-
-          originalCats.add(rawCategory)
-          normalizedCats.add(normalizedCat)
-          if (rawCategory !== normalizedCat || rawSubCategory !== normalizedSubCat) {
+          originalCats.add(rawCategory);
+          normalizedCats.add(normalizedCat);
+          if (rawCategory !== normalizedCat) {
             recordsMerged++;
           }
 
           return {
-            Section: String(row['Section'] || 'Unknown'),
-            Well: String(row['Borehole'] || row['Mother Borehole Name'] || row['Well Name'] || row['WellName'] || row['Well'] || 'Unknown'),
-            FieldName: String(row['Field Name'] || row['FieldName'] || 'Unknown'),
-            NPTCategory: normalizedCat,
-            NPTSubCategory: normalizedSubCat,
-            ResponsibleParty: normalizeCategory(String(row['Responsible Party'] || row['ResponsibleParty'] || 'Unknown')),
-            NPTHours: nptHours,
-            TimeSavedHours: timeSavedHours,
-            StartDate: row['Start Date'] instanceof Date ? row['Start Date'].toISOString() : (row['StartDate'] instanceof Date ? row['StartDate'].toISOString() : String(row['Start Date'] || row['StartDate'] || '')),
-            EndDate: row['End Date'] instanceof Date ? row['End Date'].toISOString() : (row['EndDate'] instanceof Date ? row['EndDate'].toISOString() : String(row['End Date'] || row['EndDate'] || '')),
-            Asset: String(row['Asset'] || ''),
-            RigName: String(row['Rig'] || row['Rig Name'] || ''),
-            Well_Type: String(row['Well_Type'] || ''),
-            ODR_USD: Number(row['ODR_USD']) || 0,
-            // Derived Metrics
-            CostImpact: nptHours * 3125,
-            CostSaved: timeSavedHours * 3125,
-            InterventionEfficiency: nptHours > 0 ? timeSavedHours / nptHours : 0
+            EventNo: Number(row['Event No']) || index + 1,
+            RigName: String(row['Rig Name'] || 'Unknown'),
+            WellID: String(row['WellID'] || 'Unknown'),
+            WellCategory: String(row['Well Category'] || 'Unknown'),
+            CompanyCode: String(row['Company Code'] || 'Unknown'),
+            CDE: String(row['CDE'] || ''),
+            Depth: Number(row['Depth']) || 0,
+            OnshoreOffshore: String(row['Onshore/Offshore'] || 'Unknown'),
+            Category: normalizedCat,
+            Hours: hours,
+            TimeSaved: timeSaved,
+            CostUSDPerDay: costUSDPerDay,
+            CostImpact: hours * (costUSDPerDay / 24),
+            CostSaved: timeSaved * (costUSDPerDay / 24)
           }
         })
 
@@ -183,14 +171,11 @@ export default function UploadPage() {
                 {(() => {
                   const ds = datasets.find(d => d.id === activeDatasetId)!;
                   const records = ds.records;
-                  const uniqueWells = new Set(records.map(r => r.Well)).size;
-                  const sortedDates = records.map(r => new Date(r.StartDate)).filter(d => !isNaN(d.getTime())).sort((a, b) => a.getTime() - b.getTime());
-                  const dateRange = sortedDates.length > 0 ? `${format(sortedDates[0], 'MMM dd, yyyy')} - ${format(sortedDates[sortedDates.length - 1], 'MMM dd, yyyy')}` : 'Unknown';
+                  const uniqueWells = new Set(records.map(r => r.WellID)).size;
                   const missingValues = records.reduce((acc, r) => {
                     let missing = 0;
-                    if (r.Well === 'Unknown') missing++;
-                    if (r.NPTCategory === 'Unknown') missing++;
-                    if (r.StartDate === '') missing++;
+                    if (r.WellID === 'Unknown') missing++;
+                    if (r.Category === 'Unknown') missing++;
                     return acc + missing;
                   }, 0);
 
@@ -212,10 +197,7 @@ export default function UploadPage() {
                         <span className="text-muted-foreground">Wells Covered</span>
                         <p className="font-medium">{uniqueWells.toLocaleString()}</p>
                       </div>
-                      <div className="space-y-1">
-                        <span className="text-muted-foreground">Date Range</span>
-                        <p className="font-medium">{dateRange}</p>
-                      </div>
+
                       <div className="space-y-1">
                         <span className="text-muted-foreground">Missing/Unknown Values</span>
                         <p className="font-medium">{missingValues.toLocaleString()}</p>

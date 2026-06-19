@@ -52,7 +52,7 @@ export default function AIDecisionIntelligence() {
     switch (action) {
       case 'intervention_performance': return interventionPerformance(data);
       case 'savings_potential': return savingsPotential(data);
-      case 'asset_intervention_comparison': return assetInterventionComparison(data);
+      case 'rig_intervention_comparison': return assetInterventionComparison(data);
       case 'recommend_intervention': return recommendIntervention(data);
       case 'estimate_annual_savings': return estimateAnnualSavings(data);
       case 'general_conversation':
@@ -191,7 +191,7 @@ export default function AIDecisionIntelligence() {
   const smartPrompts = [
     "Which intervention generated maximum savings?",
     "Where can we save the most additional time?",
-    "Compare intervention effectiveness across assets.",
+    "Compare intervention effectiveness across rigs.",
     "What intervention should management prioritize next?",
     "Estimate annual savings potential."
   ]
@@ -211,8 +211,8 @@ export default function AIDecisionIntelligence() {
         <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('savings_potential', 'Savings Potential')}>
           <span className="font-semibold text-xs text-green-500">Savings Potential</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('asset_intervention_comparison', 'Asset Comparison')}>
-          <span className="font-semibold text-xs text-purple-500">Asset Comparison</span>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('rig_intervention_comparison', 'Rig Comparison')}>
+          <span className="font-semibold text-xs text-purple-500">Rig Comparison</span>
         </Button>
         <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('recommend_intervention', 'Recommended Action')}>
           <span className="font-semibold text-xs text-amber-500">Recommended Action</span>

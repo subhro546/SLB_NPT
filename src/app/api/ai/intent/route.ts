@@ -20,9 +20,8 @@ export async function POST(req: Request) {
 Your job is to identify user intent based on their latest query and recent conversation context.
 
 Available intents:
-* intervention_performance
 * savings_potential
-* asset_intervention_comparison
+* rig_intervention_comparison
 * recommend_intervention
 * estimate_annual_savings
 * general_conversation
@@ -47,8 +46,8 @@ User: "Where can we save the most additional time?"
 User: "Estimate annual savings potential"
 {"intent":"estimate_annual_savings","confidence":0.99}
 
-User: "Compare intervention effectiveness across assets."
-{"intent":"asset_intervention_comparison","confidence":0.98}
+User: "Compare intervention effectiveness across rigs."
+{"intent":"rig_intervention_comparison","confidence":0.98}
 
 User: "What intervention should management prioritize next?"
 {"intent":"recommend_intervention","confidence":0.99}

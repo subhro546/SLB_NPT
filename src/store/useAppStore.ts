@@ -4,24 +4,21 @@ import { persist } from 'zustand/middleware';
 export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'AED' | 'SAR';
 
 export interface NPTRecord {
-  Section: string;
-  Well: string;
-  FieldName: string;
-  NPTCategory: string;
-  NPTSubCategory: string;
-  ResponsibleParty: string;
-  NPTHours: number;
-  TimeSavedHours: number;
-  StartDate: string;
-  EndDate: string;
-  Asset: string;
+  EventNo: number;
   RigName: string;
-  Well_Type: string;
-  ODR_USD: number;
+  WellID: string;
+  WellCategory: string;
+  CompanyCode: string;
+  CDE: string;
+  Depth: number;
+  OnshoreOffshore: string;
+  Category: string;
+  Hours: number;
+  TimeSaved: number;
+  CostUSDPerDay: number;
   // Derived
   CostImpact: number;
   CostSaved: number;
-  InterventionEfficiency: number;
 }
 
 export interface DataQualityMetrics {
@@ -39,23 +36,16 @@ export interface Dataset {
 }
 
 export interface GlobalFilters {
-  sections: string[];
-  wells: string[];
-  categories: string[];
-  subCategories: string[];
-  responsibleParties: string[];
-  assets: string[];
-  wellTypes: string[];
   rigNames: string[];
-  dateRange: { start: string | null; end: string | null };
+  companyCodes: string[];
+  wellCategories: string[];
+  onshoreOffshores: string[];
+  categories: string[];
 }
 
 interface AppState {
   currency: Currency;
   setCurrency: (c: Currency) => void;
-  
-  savingsMethod: 'method1' | 'method2';
-  setSavingsMethod: (method: 'method1' | 'method2') => void;
   
   datasets: Dataset[];
   activeDatasetId: string | null;
@@ -72,15 +62,11 @@ interface AppState {
 }
 
 const initialFilters: GlobalFilters = {
-  sections: [],
-  wells: [],
-  categories: [],
-  subCategories: [],
-  responsibleParties: [],
-  assets: [],
-  wellTypes: [],
   rigNames: [],
-  dateRange: { start: null, end: null },
+  companyCodes: [],
+  wellCategories: [],
+  onshoreOffshores: [],
+  categories: [],
 };
 
 export const useAppStore = create<AppState>()(
@@ -88,9 +74,6 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       currency: 'USD',
       setCurrency: (c) => set({ currency: c }),
-      
-      savingsMethod: 'method1',
-      setSavingsMethod: (method) => set({ savingsMethod: method }),
       
       datasets: [],
       activeDatasetId: null,

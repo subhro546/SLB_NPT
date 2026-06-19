@@ -32,22 +32,20 @@ export function GlobalFilters() {
   // Hierarchical Filter Logic
   const getHierarchyRecords = (level: number) => {
     return records.filter(r => {
-      if (!isActionableCategory(r.NPTCategory)) return false;
-      if (level > 0 && (globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(r.Asset)) return false;
-      if (level > 1 && (globalFilters.wellTypes || []).length > 0 && !(globalFilters.wellTypes || []).includes(r.Well_Type)) return false;
-      if (level > 2 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
-      if (level > 3 && (globalFilters.wells || []).length > 0 && !(globalFilters.wells || []).includes(r.Well)) return false;
-      if (level > 4 && (globalFilters.sections || []).length > 0 && !(globalFilters.sections || []).includes(r.Section)) return false;
+      if (!isActionableCategory(r.Category)) return false;
+      if (level > 0 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
+      if (level > 1 && (globalFilters.companyCodes || []).length > 0 && !(globalFilters.companyCodes || []).includes(r.CompanyCode)) return false;
+      if (level > 2 && (globalFilters.wellCategories || []).length > 0 && !(globalFilters.wellCategories || []).includes(r.WellCategory)) return false;
+      if (level > 3 && (globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(r.OnshoreOffshore)) return false;
       return true;
     });
   }
 
-  const uniqueAssets = Array.from(new Set(getHierarchyRecords(0).map(r => r.Asset).filter(Boolean))).sort()
-  const uniqueWellTypes = Array.from(new Set(getHierarchyRecords(1).map(r => r.Well_Type).filter(Boolean))).sort()
-  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(2).map(r => r.RigName).filter(Boolean))).sort()
-  const uniqueWells = Array.from(new Set(getHierarchyRecords(3).map(r => r.Well).filter(Boolean))).sort()
-  const uniqueSections = Array.from(new Set(getHierarchyRecords(4).map(r => r.Section).filter(Boolean))).sort()
-  const uniqueCategories = Array.from(new Set(getHierarchyRecords(5).map(r => r.NPTCategory).filter(Boolean))).sort()
+  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(0).map(r => r.RigName).filter(Boolean))).sort()
+  const uniqueCompanyCodes = Array.from(new Set(getHierarchyRecords(1).map(r => r.CompanyCode).filter(Boolean))).sort()
+  const uniqueWellCategories = Array.from(new Set(getHierarchyRecords(2).map(r => r.WellCategory).filter(Boolean))).sort()
+  const uniqueOnshoreOffshores = Array.from(new Set(getHierarchyRecords(3).map(r => r.OnshoreOffshore).filter(Boolean))).sort()
+  const uniqueCategories = Array.from(new Set(getHierarchyRecords(4).map(r => r.Category).filter(Boolean))).sort()
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
     if (Array.isArray(val)) return acc + val.length
@@ -67,77 +65,63 @@ export function GlobalFilters() {
 
       <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
         <Select 
-          value={globalFilters.assets?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ assets: !val || val === 'all' ? [] : [val] })}
-        >
-          <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[120px]">
-            <span className="text-muted-foreground mr-1">Asset:</span>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            {uniqueAssets.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        <Select 
-          value={globalFilters.wellTypes?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ wellTypes: !val || val === 'all' ? [] : [val] })}
-        >
-          <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Well Type:</span>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            {uniqueWellTypes.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        <Select 
           value={globalFilters.rigNames?.[0] || "all"} 
           onValueChange={(val) => setGlobalFilters({ rigNames: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Rig:</span>
+            <span className="text-muted-foreground mr-1">Rig Name:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueRigNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            {uniqueRigNames.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
 
         <Select 
-          value={globalFilters.wells?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ wells: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.companyCodes?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ companyCodes: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Well:</span>
+            <span className="text-muted-foreground mr-1">Company Code:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueWells.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+            {uniqueCompanyCodes.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
           </SelectContent>
         </Select>
 
         <Select 
-          value={globalFilters.sections?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ sections: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.wellCategories?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ wellCategories: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Section:</span>
+            <span className="text-muted-foreground mr-1">Well Category:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueSections.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {uniqueWellCategories.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
 
         <Select 
-          value={globalFilters.categories[0] || "all"} 
+          value={globalFilters.onshoreOffshores?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ onshoreOffshores: !val || val === 'all' ? [] : [val] })}
+        >
+          <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
+            <span className="text-muted-foreground mr-1">Onshore/Offshore:</span>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {uniqueOnshoreOffshores.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={globalFilters.categories?.[0] || "all"} 
           onValueChange={(val) => setGlobalFilters({ categories: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[160px]">

@@ -2,22 +2,22 @@ import { NPTRecord } from "@/store/useAppStore";
 import { isActionableCategory } from "./constants";
 
 export function summarizeCurrentView(records: NPTRecord[]) {
-  const interventionRecords = records.filter(r => r.TimeSavedHours > 0);
+  const interventionRecords = records.filter(r => r.TimeSaved > 0);
   return {
     total_interventions_applied: interventionRecords.length,
-    total_time_saved_hours: records.reduce((sum, r) => sum + r.TimeSavedHours, 0),
+    total_time_saved_hours: records.reduce((sum, r) => sum + r.TimeSaved, 0),
     total_cost_saved_usd: records.reduce((sum, r) => sum + r.CostSaved, 0)
   };
 }
 
 export function interventionPerformance(records: NPTRecord[]) {
   const categoryStats = records.reduce((acc, curr) => {
-    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0, Apps: 0 };
-    acc[curr.NPTCategory].NPTHours += curr.NPTHours;
-    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours;
-    acc[curr.NPTCategory].CostSaved += curr.CostSaved;
-    acc[curr.NPTCategory].CostImpact += curr.CostImpact;
-    if (curr.TimeSavedHours > 0) acc[curr.NPTCategory].Apps += 1;
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0, Apps: 0 };
+    acc[curr.Category].NPTHours += curr.Hours;
+    acc[curr.Category].TimeSaved += curr.TimeSaved;
+    acc[curr.Category].CostSaved += curr.CostSaved;
+    acc[curr.Category].CostImpact += curr.CostImpact;
+    if (curr.TimeSaved > 0) acc[curr.Category].Apps += 1;
     return acc;
   }, {} as Record<string, any>);
 
@@ -34,11 +34,11 @@ export function interventionPerformance(records: NPTRecord[]) {
 
 export function savingsPotential(records: NPTRecord[]) {
   const categoryStats = records.reduce((acc, curr) => {
-    if (!acc[curr.NPTCategory]) acc[curr.NPTCategory] = { name: curr.NPTCategory, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0 };
-    acc[curr.NPTCategory].NPTHours += curr.NPTHours;
-    acc[curr.NPTCategory].TimeSaved += curr.TimeSavedHours;
-    acc[curr.NPTCategory].CostSaved += curr.CostSaved;
-    acc[curr.NPTCategory].CostImpact += curr.CostImpact;
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, NPTHours: 0, TimeSaved: 0, CostSaved: 0, CostImpact: 0 };
+    acc[curr.Category].NPTHours += curr.Hours;
+    acc[curr.Category].TimeSaved += curr.TimeSaved;
+    acc[curr.Category].CostSaved += curr.CostSaved;
+    acc[curr.Category].CostImpact += curr.CostImpact;
     return acc;
   }, {} as Record<string, any>);
 
@@ -53,18 +53,18 @@ export function savingsPotential(records: NPTRecord[]) {
 }
 
 export function assetInterventionComparison(records: NPTRecord[]) {
-  const assetStats = records.reduce((acc, curr) => {
-    if (!acc[curr.Asset]) acc[curr.Asset] = { asset: curr.Asset, TimeSaved: 0, CostSaved: 0, NPTHours: 0 };
-    acc[curr.Asset].TimeSaved += curr.TimeSavedHours;
-    acc[curr.Asset].CostSaved += curr.CostSaved;
-    acc[curr.Asset].NPTHours += curr.NPTHours;
+  const rigStats = records.reduce((acc, curr) => {
+    if (!acc[curr.RigName]) acc[curr.RigName] = { asset: curr.RigName, TimeSaved: 0, CostSaved: 0, NPTHours: 0 };
+    acc[curr.RigName].TimeSaved += curr.TimeSaved;
+    acc[curr.RigName].CostSaved += curr.CostSaved;
+    acc[curr.RigName].NPTHours += curr.Hours;
     return acc;
   }, {} as Record<string, any>);
 
-  const sortedAssets = Object.values(assetStats).sort((a, b) => b.CostSaved - a.CostSaved).slice(0, 3);
+  const sortedRigs = Object.values(rigStats).sort((a, b) => b.CostSaved - a.CostSaved).slice(0, 3);
   
-  return sortedAssets.map(a => ({
-    asset: a.asset,
+  return sortedRigs.map(a => ({
+    rig_name: a.asset,
     cost_saved_usd: a.CostSaved,
     time_saved_hours: a.TimeSaved,
     efficiency_percentage: a.NPTHours > 0 ? (a.TimeSaved / a.NPTHours) * 100 : 0
@@ -76,19 +76,12 @@ export function recommendIntervention(records: NPTRecord[]) {
 }
 
 export function estimateAnnualSavings(records: NPTRecord[]) {
-  const monthsSet = new Set(records.map(r => r.StartDate ? r.StartDate.substring(0, 7) : ''));
-  // Remove empty string if present
-  monthsSet.delete('');
-  const months = monthsSet.size;
-  
   const totalCostSaved = records.reduce((sum, r) => sum + r.CostSaved, 0);
-  const totalTimeSaved = records.reduce((sum, r) => sum + r.TimeSavedHours, 0);
+  const totalTimeSaved = records.reduce((sum, r) => sum + r.TimeSaved, 0);
 
-  const monthsDivisor = months > 0 ? months : 1;
   return {
-    months_in_dataset: months,
-    monthly_average_cost_saved_usd: totalCostSaved / monthsDivisor,
-    projected_annual_cost_saved_usd: (totalCostSaved / monthsDivisor) * 12,
-    projected_annual_time_saved_hours: (totalTimeSaved / monthsDivisor) * 12
+    dataset_total_cost_saved_usd: totalCostSaved,
+    projected_annual_cost_saved_usd: totalCostSaved * 1.2, 
+    projected_annual_time_saved_hours: totalTimeSaved * 1.2
   };
 }
