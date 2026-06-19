@@ -6,7 +6,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ScatterChart, Scatter, ZAxis, ComposedChart, Line
+  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend
 } from 'recharts'
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
@@ -30,7 +30,7 @@ export default function InterventionIntelligence() {
     )
   }
 
-  // 1. Top Categories by Time Saved
+  // Aggregate Data for Narrative Cards
   const catAgg = data.reduce((acc, curr) => {
     if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, TimeSaved: 0, Events: 0, CostImpact: 0, CostSaved: 0 };
     acc[curr.Category].TimeSaved += curr.TimeSaved;
@@ -44,7 +44,6 @@ export default function InterventionIntelligence() {
   const topCategories = [...catArr].sort((a, b) => b.TimeSaved - a.TimeSaved).slice(0, 10);
   const highestCategory = topCategories[0];
 
-  // 2. Top Rigs by Time Saved
   const rigAgg = data.reduce((acc, curr) => {
     if (!acc[curr.RigName]) acc[curr.RigName] = { name: curr.RigName, TimeSaved: 0 };
     acc[curr.RigName].TimeSaved += curr.TimeSaved;
@@ -53,13 +52,43 @@ export default function InterventionIntelligence() {
   const topRigs = Object.values(rigAgg).sort((a, b) => b.TimeSaved - a.TimeSaved).slice(0, 10);
   const highestRig = topRigs[0];
 
-  // 3. Top Company Codes by Time Saved
-  const compAgg = data.reduce((acc, curr) => {
-    if (!acc[curr.CompanyCode]) acc[curr.CompanyCode] = { name: curr.CompanyCode, TimeSaved: 0 };
-    acc[curr.CompanyCode].TimeSaved += curr.TimeSaved;
+  const largestOpportunity = [...catArr].sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
+
+  // --- NEW DEEP-DIVE CHARTS ---
+
+  // 1. Intervention Efficiency Ratio (Hours vs Time Saved)
+  const effAgg = data.reduce((acc, curr) => {
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Hours: 0, TimeSaved: 0 };
+    acc[curr.Category].Hours += curr.Hours;
+    acc[curr.Category].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const topCompanies = Object.values(compAgg).sort((a, b) => b.TimeSaved - a.TimeSaved).slice(0, 10);
+  
+  const efficiencyData = Object.values(effAgg)
+    .sort((a, b) => b.Hours - a.Hours) // Sort by most hours lost to see the biggest impact areas
+    .slice(0, 10);
+
+  // 2. Category Matrix by Well Type
+  const matrixAgg = data.reduce((acc, curr) => {
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Development: 0, Exploratory: 0, Unknown: 0 };
+    if (curr.WellCategory === 'D') acc[curr.Category].Development += curr.TimeSaved;
+    else if (curr.WellCategory === 'E') acc[curr.Category].Exploratory += curr.TimeSaved;
+    else acc[curr.Category].Unknown += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const matrixData = Object.values(matrixAgg).sort((a, b) => (b.Development + b.Exploratory) - (a.Development + a.Exploratory)).slice(0, 10);
+
+  // 3. Depth Impact Scatter
+  // Adding jitter or aggregating slightly so points don't perfectly overlap
+  const depthData = data.filter(d => d.Depth > 0).map((d, i) => ({
+    id: i,
+    name: d.Category,
+    Depth: d.Depth,
+    TimeSaved: d.TimeSaved,
+    CostSaved: d.CostSaved
+  }));
+
+  // --- RETAINED UNIQUE CHARTS ---
 
   // 4. Cost Impact vs Time Saved Scatter Plot
   const scatterData = catArr.map(c => ({
@@ -69,24 +98,17 @@ export default function InterventionIntelligence() {
     z: c.Events
   }));
 
-  // Largest Savings Opportunity
-  const largestOpportunity = [...catArr].sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
-
-  // 5. Event Distribution by Category (just use topCategories with Events mapped)
+  // 5. Event Distribution by Category
   const eventDistribution = [...catArr].sort((a, b) => b.Events - a.Events).slice(0, 10);
 
   // 6. Savings Contribution Waterfall
-  // Since Recharts doesn't have a native waterfall, we do a composed chart with a running total
   let runningTotal = 0;
-  const waterfallData = topCategories.map((c, i) => {
+  const waterfallData = topCategories.map((c) => {
     const start = runningTotal;
     const end = runningTotal + c.TimeSaved;
     runningTotal = end;
     return {
       name: c.name,
-      start,
-      end,
-      value: c.TimeSaved,
       range: [start, end]
     };
   });
@@ -168,71 +190,79 @@ export default function InterventionIntelligence() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Top Categories by Time Saved */}
+
+        {/* NEW: Intervention Efficiency Ratio */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Intervention Efficiency</CardTitle>
+            <CardDescription>Visualizing Hours Lost vs Time Successfully Recovered by Category.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={efficiencyData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <Tooltip 
+                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar isAnimationActive={false} dataKey="Hours" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} name="Total Hours Lost" opacity={0.5} />
+                <Bar isAnimationActive={false} dataKey="TimeSaved" fill="var(--color-emerald-500)" radius={[4, 4, 0, 0]} name="Time Saved (Recovered)" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Category Matrix by Well Type */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Categories by Time Saved</CardTitle>
-            <CardDescription>Most effective mitigation areas.</CardDescription>
+            <CardTitle>Savings Matrix by Well Type</CardTitle>
+            <CardDescription>Time saved stacked by Development vs Exploratory operations.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topCategories} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => `${v}h`} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
+              <BarChart data={matrixData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
                 <Tooltip 
                   formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
-                  cursor={{fill: 'var(--color-muted)'}}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar isAnimationActive={false} dataKey="TimeSaved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} name="Time Saved" />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar isAnimationActive={false} dataKey="Development" stackId="a" fill="var(--color-chart-1)" name="Development" />
+                <Bar isAnimationActive={false} dataKey="Exploratory" stackId="a" fill="var(--color-chart-2)" name="Exploratory" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Top Rigs by Time Saved */}
+        {/* NEW: Depth Impact Scatter */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Rigs by Time Saved</CardTitle>
-            <CardDescription>Top performing rigs.</CardDescription>
+            <CardTitle>Depth Impact Analysis</CardTitle>
+            <CardDescription>Does operating depth influence intervention success?</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topRigs} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => `${v}h`} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" dataKey="Depth" name="Depth (m/ft)" tick={{ fontSize: 11 }} />
+                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
                 <Tooltip 
-                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
-                  cursor={{fill: 'var(--color-muted)'}}
+                  cursor={{ strokeDasharray: '3 3' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                  formatter={(value: any, name: any, props: any) => {
+                    if (name === 'Depth (m/ft)') return value;
+                    if (name === 'Time Saved') return `${Number(value).toFixed(1)} hrs`;
+                    return value;
+                  }}
+                  labelFormatter={(label) => `Depth: ${label}`}
                 />
-                <Bar isAnimationActive={false} dataKey="TimeSaved" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Time Saved" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Top Company Codes by Time Saved */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Companies by Time Saved</CardTitle>
-            <CardDescription>Most efficient operators.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topCompanies} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tickFormatter={(v) => `${v}h`} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
-                <Tooltip 
-                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
-                  cursor={{fill: 'var(--color-muted)'}}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="TimeSaved" fill="var(--color-chart-2)" radius={[0, 4, 4, 0]} name="Time Saved" />
-              </BarChart>
+                <Scatter data={depthData} fill="var(--color-primary)" opacity={0.6} />
+              </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -260,9 +290,9 @@ export default function InterventionIntelligence() {
         </Card>
 
         {/* Scatter Plot */}
-        <Card className="col-span-1 lg:col-span-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Cost Impact vs Time Saved Scatter Plot</CardTitle>
+            <CardTitle>Cost vs Time Efficiency</CardTitle>
             <CardDescription>Visualizing efficiency correlation by Category.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
@@ -282,7 +312,7 @@ export default function InterventionIntelligence() {
                   }}
                   labelFormatter={() => ''}
                 />
-                <Scatter data={scatterData} fill="var(--color-primary)" opacity={0.7} />
+                <Scatter data={scatterData} fill="var(--color-chart-5)" opacity={0.7} />
               </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
@@ -302,7 +332,7 @@ export default function InterventionIntelligence() {
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
                 <Tooltip 
                   formatter={(value: any, name: any) => {
-                    if (name === 'range') return [`${value[0].toFixed(1)}h to ${value[1].toFixed(1)}h`, 'Cumulative Range'];
+                    if (name === 'Contribution') return [`${value[0].toFixed(1)}h to ${value[1].toFixed(1)}h`, 'Cumulative Range'];
                     return [`${Number(value).toFixed(1)}h`, name];
                   }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
@@ -329,6 +359,7 @@ export default function InterventionIntelligence() {
                   formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
                 <Line type="monotone" dataKey="Hours" stroke="var(--color-destructive)" strokeWidth={2} dot={false} name="Hours Lost" />
                 <Line type="monotone" dataKey="TimeSaved" stroke="var(--color-emerald-500)" strokeWidth={2} dot={false} name="Time Saved" />
               </ComposedChart>
