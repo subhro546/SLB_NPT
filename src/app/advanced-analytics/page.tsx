@@ -384,7 +384,7 @@ export default function AdvancedAnalytics() {
               <BarChart data={topCategoriesBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <RechartsTooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
@@ -407,7 +407,7 @@ export default function AdvancedAnalytics() {
               <BarChart data={topWellsBarData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
                 <RechartsTooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}

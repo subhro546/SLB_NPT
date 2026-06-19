@@ -357,7 +357,7 @@ export default function RootCauseAnalysis() {
               <BarChart data={stackedData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
+                <YAxis dataKey="category" type="category" interval={0} width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
@@ -383,7 +383,7 @@ export default function RootCauseAnalysis() {
               <BarChart data={topWells} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={80} tick={{ fontSize: 11 }} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}

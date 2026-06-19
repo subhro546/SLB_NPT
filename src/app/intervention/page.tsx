@@ -173,7 +173,7 @@ export default function InterventionIntelligence() {
               <BarChart data={categorySavingsData} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
                 <XAxis type="number" tickFormatter={(v) => formatCurrency(v, true)} />
-                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10 }} tickFormatter={formatActionableCategory} />
+                <YAxis dataKey="name" type="category" interval={0} width={80} tick={{ fontSize: 10 }} tickFormatter={formatActionableCategory} />
                 <Tooltip 
                   formatter={(value: any) => formatCurrency(Number(value))}
                   cursor={{fill: 'var(--color-muted)'}}
