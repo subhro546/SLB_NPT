@@ -20,5 +20,5 @@ export const isActionableCategory = (category: string) => {
 }
 
 export const formatActionableCategory = (category: string) => {
-  return isActionableCategory(category) ? `${category} 🟢` : category
+  return category
 }

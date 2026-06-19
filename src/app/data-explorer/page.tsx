@@ -58,7 +58,6 @@ export default function DataExplorer() {
       cell: ({ row }) => (
         <span className="flex items-center gap-2">
           {row.getValue("NPTCategory") as string}
-          {isActionableCategory(row.getValue("NPTCategory") as string) && <span className="text-emerald-500 text-xs" title="Savable Category">🟢</span>}
         </span>
       )
     },
