@@ -135,24 +135,32 @@ export default function InterventionIntelligence() {
     };
   });
 
-  // 8. Nested Pie Data (Well Type -> Category)
-  const wellTypeAggPie = data.reduce((acc, curr) => {
-    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
-    if (!acc[wt]) acc[wt] = { name: wt, value: 0 };
-    acc[wt].value += curr.TimeSaved;
+  // 8. Nested Pie Data (Category -> Well Type)
+  const catAggPie = data.reduce((acc, curr) => {
+    const cat = formatActionableCategory(curr.Category);
+    if (!acc[cat]) acc[cat] = { name: cat, value: 0 };
+    acc[cat].value += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const pieInnerData = Object.values(wellTypeAggPie).filter(d => d.value > 0);
+  const pieInnerData = Object.values(catAggPie).filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 5); // Top 5 cats for inner
 
   const wellCatAggPie = data.reduce((acc, curr) => {
-    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
     const cat = formatActionableCategory(curr.Category);
-    const key = `${wt}-${cat}`;
-    if (!acc[key]) acc[key] = { name: cat, wt, value: 0 };
+    // Only include top 5 categories
+    if (!pieInnerData.find(d => d.name === cat)) return acc;
+
+    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    const key = `${cat}-${wt}`;
+    if (!acc[key]) acc[key] = { name: wt, cat, value: 0 };
     acc[key].value += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => a.wt.localeCompare(b.wt));
+  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => {
+    if (a.cat === b.cat) return b.value - a.value;
+    const catA = pieInnerData.findIndex(c => c.name === a.cat);
+    const catB = pieInnerData.findIndex(c => c.name === b.cat);
+    return catA - catB;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -402,7 +410,7 @@ export default function InterventionIntelligence() {
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
-            <CardDescription>Time saved by Well Type (Inner) and specific Categories (Outer).</CardDescription>
+            <CardDescription>Time saved by specific Categories (Inner) broken down by Well Type (Outer).</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -411,15 +419,16 @@ export default function InterventionIntelligence() {
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80} fill="var(--color-chart-2)">
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={({ name }) => name}>
                   {pieInnerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120} fill="var(--color-chart-3)" label={({ name }) => name}>
-                  {pieOuterData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
-                  ))}
+                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120} label={({ name }) => name}>
+                  {pieOuterData.map((entry, index) => {
+                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
+                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.7} />
+                  })}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
