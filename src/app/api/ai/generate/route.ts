@@ -34,6 +34,58 @@ Respond conversationally in 1-2 sentences. Do NOT run analytics.`;
       ? chatHistory.slice(-4).map((msg: any) => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`).join('\n')
       : 'No history';
 
+    if (action === 'generate_visualization') {
+      const vizPrompt = `You are an expert data visualization AI for a drilling operations dashboard.
+The user wants a chart based on the provided aggregated data.
+
+Current User Query: "${userQuery}"
+
+Aggregated Analytics Data (Source of Truth - NEVER invent numbers):
+${JSON.stringify(analyticsData, null, 2)}
+
+Your task is to:
+1. Select the most appropriate chart type: 'bar', 'pie', 'line', or 'scatter'.
+2. Select the correct array from the aggregated data (e.g. aggregatedByCategory, aggregatedByRig) that answers the user's question.
+3. Determine the 'xAxisKey' (for the label, e.g. "Category" or "RigName") and 'yAxisKey' (for the value, e.g. "TimeSaved" or "CostImpact").
+4. Provide a brief executive summary explaining the visualization.
+
+Requirements:
+- Output strictly valid JSON without any markdown formatting, backticks, or extra text.
+
+JSON Structure:
+{
+  "chartOptions": {
+    "chartType": "bar",
+    "data": [{"Category": "Tool Failure", "TimeSaved": 100}, ...],
+    "xAxisKey": "Category",
+    "yAxisKey": "TimeSaved"
+  },
+  "summary": "Executive summary here..."
+}
+`;
+
+      const out = await hf.chatCompletion({
+        model: MODEL,
+        messages: [{ role: "user", content: vizPrompt }],
+        max_tokens: 1000,
+        temperature: 0.1,
+      });
+
+      let rawResponse = out.choices[0].message.content || "{}";
+      rawResponse = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      try {
+        const parsed = JSON.parse(rawResponse);
+        return NextResponse.json({ 
+          summary: parsed.summary || "Here is your visualization.", 
+          chartConfig: parsed.chartOptions 
+        });
+      } catch (e) {
+        console.error("Failed to parse visualization JSON:", rawResponse);
+        return NextResponse.json({ summary: "Failed to generate a valid visualization layout." });
+      }
+    }
+
     const prompt = `You are a McKinsey-style executive drilling operations analyst.
 You must analyze the provided data and answer the user query.
 

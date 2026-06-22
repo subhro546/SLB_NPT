@@ -85,3 +85,46 @@ export function estimateAnnualSavings(records: NPTRecord[]) {
     projected_annual_time_saved_hours: totalTimeSaved * 1.2
   };
 }
+
+export function prepareVisualizationContext(records: NPTRecord[]) {
+  // Aggregate data by Category
+  const byCategory = records.reduce((acc, curr) => {
+    const cat = isActionableCategory(curr.Category) ? curr.Category : 'Other';
+    if (!acc[cat]) acc[cat] = { Category: cat, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[cat].Events += 1;
+    acc[cat].NPTHours += curr.Hours;
+    acc[cat].TimeSaved += curr.TimeSaved;
+    acc[cat].CostImpact += curr.CostImpact;
+    acc[cat].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Aggregate data by Rig
+  const byRig = records.reduce((acc, curr) => {
+    if (!acc[curr.RigName]) acc[curr.RigName] = { RigName: curr.RigName, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[curr.RigName].Events += 1;
+    acc[curr.RigName].NPTHours += curr.Hours;
+    acc[curr.RigName].TimeSaved += curr.TimeSaved;
+    acc[curr.RigName].CostImpact += curr.CostImpact;
+    acc[curr.RigName].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Aggregate data by Well Type
+  const byWellType = records.reduce((acc, curr) => {
+    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    if (!acc[wt]) acc[wt] = { WellType: wt, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[wt].Events += 1;
+    acc[wt].NPTHours += curr.Hours;
+    acc[wt].TimeSaved += curr.TimeSaved;
+    acc[wt].CostImpact += curr.CostImpact;
+    acc[wt].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  return {
+    aggregatedByCategory: Object.values(byCategory),
+    aggregatedByRig: Object.values(byRig),
+    aggregatedByWellType: Object.values(byWellType)
+  };
+}

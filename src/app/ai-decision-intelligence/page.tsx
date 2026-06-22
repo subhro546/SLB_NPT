@@ -9,21 +9,22 @@ import {
   savingsPotential,
   assetInterventionComparison,
   recommendIntervention,
-  estimateAnnualSavings
+  estimateAnnualSavings,
+  prepareVisualizationContext
 } from "@/lib/analytics-engine"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BrainCircuit, Search, Copy, Send, FileText, FileDown, CheckCircle2, Loader2, Database } from "lucide-react"
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
+import { BrainCircuit, Search, Copy, Send, FileText, FileDown, CheckCircle2, Loader2, Database, BarChart2 } from "lucide-react"
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
 
 export default function AIDecisionIntelligence() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
   
   const [query, setQuery] = useState("")
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string, title?: string }[]>([])
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string, title?: string, chartConfig?: any }[]>([])
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -56,6 +57,7 @@ export default function AIDecisionIntelligence() {
       case 'rig_intervention_comparison': return assetInterventionComparison(data);
       case 'recommend_intervention': return recommendIntervention(data);
       case 'estimate_annual_savings': return estimateAnnualSavings(data);
+      case 'generate_visualization': return prepareVisualizationContext(data);
       case 'general_conversation':
       case 'clarification_required':
         return null;
@@ -78,12 +80,12 @@ export default function AIDecisionIntelligence() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ analyticsData, userQuery, action, chatHistory })
       })
-      const { summary } = await res.json()
+      const { summary, chartConfig } = await res.json()
 
       setChatHistory(prev => [
         ...prev,
         { role: 'user', content: userQuery },
-        { role: 'ai', title, content: summary }
+        { role: 'ai', title, content: summary, chartConfig }
       ])
     } catch (e) {
       console.error(e)
@@ -129,12 +131,12 @@ export default function AIDecisionIntelligence() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ analyticsData, userQuery: currentQuery, action, chatHistory })
       })
-      const { summary } = await genRes.json()
+      const { summary, chartConfig } = await genRes.json()
 
       setChatHistory(prev => [
         ...prev,
         { role: 'user', content: currentQuery },
-        { role: 'ai', title: `${title} Insight`, content: summary }
+        { role: 'ai', title: `${title} Insight`, content: summary, chartConfig }
       ])
     } catch (e) {
       setChatHistory(prev => [
@@ -190,12 +192,69 @@ export default function AIDecisionIntelligence() {
   }
 
   const smartPrompts = [
+    "Plot the time saved across all rigs.",
     "Which intervention generated maximum savings?",
+    "Show me a pie chart of the cost impact by well category.",
     "Where can we save the most additional time?",
-    "Compare intervention effectiveness across rigs.",
-    "What intervention should management prioritize next?",
-    "Estimate annual savings potential."
+    "Visualize the biggest remaining savings opportunities."
   ]
+
+  const renderDynamicChart = (config: any) => {
+    if (!config || !config.data || config.data.length === 0) return null;
+    const { chartType, data, xAxisKey, yAxisKey } = config;
+    
+    if (chartType === 'bar') {
+      return (
+        <div className="h-[300px] w-full mt-4 mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 10, bottom: 40, left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+              <XAxis dataKey={xAxisKey} angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }} />
+              <Bar isAnimationActive={false} dataKey={yAxisKey} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+    
+    if (chartType === 'pie') {
+      return (
+        <div className="h-[300px] w-full mt-4 mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={data} dataKey={yAxisKey} nameKey={xAxisKey} cx="50%" cy="50%" outerRadius={100} label>
+                {data.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)'][index % 5]} />
+                ))}
+              </Pie>
+              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }} />
+              <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '11px' }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+
+    if (chartType === 'line') {
+      return (
+        <div className="h-[300px] w-full mt-4 mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 10, right: 10, bottom: 40, left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+              <XAxis dataKey={xAxisKey} angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }} />
+              <Line isAnimationActive={false} type="monotone" dataKey={yAxisKey} stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+
+    return <div className="text-sm text-muted-foreground italic my-2">Unsupported chart type: {chartType}</div>;
+  }
 
   const wellCatAgg = data.reduce((acc, curr) => {
     const key = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
@@ -304,6 +363,7 @@ export default function AIDecisionIntelligence() {
                         </div>
                       )}
                       <div className="text-[14px]">
+                        {msg.role === 'ai' && msg.chartConfig && renderDynamicChart(msg.chartConfig)}
                         {msg.role === 'ai' ? renderFormattedContent(msg.content) : msg.content}
                       </div>
                     </div>

@@ -24,6 +24,7 @@ Available intents:
 * rig_intervention_comparison
 * recommend_intervention
 * estimate_annual_savings
+* generate_visualization
 * general_conversation
 
 CRITICAL RULES:
@@ -51,6 +52,18 @@ User: "Compare intervention effectiveness across rigs."
 
 User: "What intervention should management prioritize next?"
 {"intent":"recommend_intervention","confidence":0.99}
+
+User: "Show me a chart of the cost impact by well category."
+{"intent":"generate_visualization","confidence":0.98}
+
+User: "Plot the time saved across all rigs."
+{"intent":"generate_visualization","confidence":0.98}
+
+User: "Visualize the biggest remaining savings opportunities."
+{"intent":"generate_visualization","confidence":0.97}
+
+User: "Can you graph the distribution of events?"
+{"intent":"generate_visualization","confidence":0.98}
 
 User: "Hello"
 {"intent":"general_conversation","confidence":0.99}
