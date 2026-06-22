@@ -116,18 +116,14 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const rigEventData = Object.values(rigEventAgg).sort((a, b) => b.Events - a.Events).slice(0, 10);
 
-  // 7. Cumulative Event Trend Analysis (Event No)
-  let cumulativeHours = 0;
-  let cumulativeSaved = 0;
-  const trendData = [...data].sort((a, b) => a.EventNo - b.EventNo).map(d => {
-    cumulativeHours += d.Hours;
-    cumulativeSaved += d.TimeSaved;
-    return {
-      EventNo: d.EventNo,
-      TimeSaved: cumulativeSaved,
-      Hours: cumulativeHours
-    };
-  });
+  // 7. Statistical Correlation (Scatter: Hours vs Time Saved)
+  const scatterData = data
+    .filter(d => d.TimeSaved > 0 && d.Hours > 0)
+    .map(d => ({
+      Hours: Number(d.Hours.toFixed(1)),
+      TimeSaved: Number(d.TimeSaved.toFixed(1)),
+      Category: formatActionableCategory(d.Category)
+    }));
 
   // 8. Nested Pie Data (Category -> Well Type)
   const catAggPie = data.reduce((acc, curr) => {
@@ -416,36 +412,28 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* Cumulative Event Trend Analysis */}
+        {/* REPLACED: Statistical Correlation Scatter Chart */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Cumulative Impact Trend</CardTitle>
-            <CardDescription>Tracking cumulative hours lost vs time saved over consecutive events.</CardDescription>
+            <CardTitle>Intervention Yield Correlation</CardTitle>
+            <CardDescription>Statistical relationship between NPT Severity (Hours Lost) and Time Successfully Recovered.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <defs>
-                  <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-destructive)" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="var(--color-destructive)" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorSaved" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-emerald-500)" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="var(--color-emerald-500)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="EventNo" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <XAxis type="number" dataKey="Hours" name="NPT Hours Lost" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
                 <Tooltip 
-                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
+                  cursor={{ strokeDasharray: '3 3' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                  formatter={(value: any, name: any, props: any) => {
+                    if (name === 'Category') return [value, name];
+                    return [`${value} hrs`, name];
+                  }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Area type="monotone" dataKey="Hours" stroke="var(--color-destructive)" fillOpacity={1} fill="url(#colorHours)" name="Cumulative Hours Lost" />
-                <Area type="monotone" dataKey="TimeSaved" stroke="var(--color-emerald-500)" fillOpacity={1} fill="url(#colorSaved)" name="Cumulative Time Saved" />
-              </AreaChart>
+                <Scatter name="Interventions" data={scatterData} fill="var(--color-primary)" fillOpacity={0.6} />
+              </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
