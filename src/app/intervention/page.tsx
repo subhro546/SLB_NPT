@@ -419,12 +419,13 @@ export default function InterventionIntelligence() {
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={({ name }) => name}>
+                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
                   {pieInnerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120} label={({ name }) => name}>
+                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120}>
                   {pieOuterData.map((entry, index) => {
                     const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
                     return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.7} />

@@ -302,6 +302,29 @@ export default function NPTAnalytics() {
           </CardContent>
         </Card>
 
+        {/* Category Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Distribution</CardTitle>
+            <CardDescription>Frequency of events.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={catDistData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
+                <RechartsTooltip 
+                  formatter={(value: any) => [`${value} Events`, 'Frequency']}
+                  cursor={{fill: 'var(--color-muted)'}}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="count" fill="var(--color-chart-2)" radius={[0, 4, 4, 0]} name="Events" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         {/* REPLACED: Recovery Efficiency with Cost Impact Treemap */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
@@ -322,29 +345,6 @@ export default function NPTAnalytics() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
               </Treemap>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Category Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Category Distribution</CardTitle>
-            <CardDescription>Frequency of events.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={catDistData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} tickFormatter={formatActionableCategory} />
-                <RechartsTooltip 
-                  formatter={(value: any) => [`${value} Events`, 'Frequency']}
-                  cursor={{fill: 'var(--color-muted)'}}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="count" fill="var(--color-chart-2)" radius={[0, 4, 4, 0]} name="Events" />
-              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
