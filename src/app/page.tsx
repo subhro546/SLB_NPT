@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useAppStore } from "@/store/useAppStore"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend, RadialBarChart, RadialBar, PolarAngleAxis
 } from 'recharts'
 import { FileSpreadsheet, TrendingDown, Clock, DollarSign, Activity, Target } from "lucide-react"
 import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
@@ -98,6 +98,18 @@ export default function ExecutiveCommandCenter() {
 
   const wellCategoryData = Object.values(wellCatAgg);
 
+  // 7. Overall Efficiency Realization
+  const maxPossibleSavings = totalHoursLost;
+  const efficiencyRatio = maxPossibleSavings > 0 ? (totalTimeSaved / maxPossibleSavings) * 100 : 0;
+  
+  const radialData = [
+    {
+      name: 'Efficiency',
+      value: efficiencyRatio,
+      fill: 'var(--color-emerald-500)',
+    }
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -161,6 +173,38 @@ export default function ExecutiveCommandCenter() {
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold text-blue-500">{avgTimeSaved.toFixed(1)}h</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* NEW: Efficiency Realization Radial Chart */}
+      <div className="grid gap-6 md:grid-cols-3 mb-6">
+        <Card className="col-span-1 md:col-span-3 lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Efficiency Realization Ratio</CardTitle>
+            <CardDescription>Total Time Saved vs Hours Lost.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[250px] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart 
+                cx="50%" cy="50%" 
+                innerRadius="70%" outerRadius="90%" 
+                barSize={20} 
+                data={radialData}
+                startAngle={90}
+                endAngle={-270}
+              >
+                <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                <RadialBar
+                  background={{ fill: 'var(--color-muted)', opacity: 0.2 }}
+                  dataKey="value"
+                  cornerRadius={10}
+                />
+                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-4xl font-bold" fill="var(--color-foreground)">
+                  {`${efficiencyRatio.toFixed(1)}%`}
+                </text>
+              </RadialBarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

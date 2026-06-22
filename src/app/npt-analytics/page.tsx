@@ -6,7 +6,8 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  BarChart, PieChart, Pie, Cell, Legend, Scatter
+  BarChart, PieChart, Pie, Cell, Legend, Scatter,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts'
 import { FileSpreadsheet, AlertCircle, Activity, Gauge, Focus } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
@@ -116,6 +117,16 @@ export default function NPTAnalytics() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
     .map(([cat, count]) => ({ name: cat, count }));
+
+  // 5. Radar Chart (Category Risk Profile)
+  const radarData = top10CatsNames.slice(0, 5).map(cat => {
+    const catEvents = data.filter(d => (d.Category || 'Unknown') === cat);
+    return {
+      category: formatActionableCategory(cat),
+      Hours: catEvents.reduce((acc, curr) => acc + curr.Hours, 0),
+      TimeSaved: catEvents.reduce((acc, curr) => acc + curr.TimeSaved, 0)
+    };
+  });
 
 
   return (
@@ -274,6 +285,30 @@ export default function NPTAnalytics() {
                 />
                 <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px' }} formatter={(value: any) => formatActionableCategory(value)} />
               </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Radar Chart */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Multivariate Risk Profile (Top 5 Categories)</CardTitle>
+            <CardDescription>Comparing total hours lost versus time saved across key categories.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                <PolarGrid stroke="var(--color-border)" />
+                <PolarAngleAxis dataKey="category" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }} />
+                <PolarRadiusAxis angle={30} tick={{ fontSize: 11 }} />
+                <Radar name="Hours Lost" dataKey="Hours" stroke="var(--color-destructive)" fill="var(--color-destructive)" fillOpacity={0.3} />
+                <Radar name="Time Saved" dataKey="TimeSaved" stroke="var(--color-emerald-500)" fill="var(--color-emerald-500)" fillOpacity={0.3} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <RechartsTooltip 
+                  formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+              </RadarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

@@ -133,6 +133,14 @@ export default function InterventionIntelligence() {
     };
   });
 
+  // 8. Bubble Chart Data (Depth vs Time Saved vs Cost)
+  const bubbleData = data.filter(d => d.Depth > 0).map(d => ({
+    Depth: d.Depth,
+    TimeSaved: d.TimeSaved,
+    CostSaved: d.CostSaved,
+    Category: formatActionableCategory(d.Category)
+  }));
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
@@ -373,6 +381,33 @@ export default function InterventionIntelligence() {
                 />
                 <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} formatter={(value) => formatActionableCategory(value)} />
               </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Bubble Chart (Depth vs Time Saved vs Cost Saved) */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Depth Impact vs Value (Bubble Chart)</CardTitle>
+            <CardDescription>Correlation between depth (X), time saved (Y), and cost saved (Bubble Size).</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" dataKey="Depth" name="Depth" unit="m" tick={{ fontSize: 11 }} />
+                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" unit="h" tick={{ fontSize: 11 }} />
+                <ZAxis type="number" dataKey="CostSaved" range={[60, 500]} name="Cost Saved" />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }} 
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                  formatter={(value: any, name: any) => {
+                    if (name === 'Cost Saved') return formatCurrency(Number(value));
+                    return `${Number(value).toFixed(1)}${name === 'Depth' ? 'm' : 'h'}`;
+                  }}
+                />
+                <Scatter name="Interventions" data={bubbleData} fill="var(--color-primary)" opacity={0.6} />
+              </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

@@ -15,7 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BrainCircuit, Search, Copy, Send, FileText, FileDown, CheckCircle2, Loader2 } from "lucide-react"
+import { BrainCircuit, Search, Copy, Send, FileText, FileDown, CheckCircle2, Loader2, Database } from "lucide-react"
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
 
 export default function AIDecisionIntelligence() {
   const data = useFilteredData()
@@ -196,11 +197,40 @@ export default function AIDecisionIntelligence() {
     "Estimate annual savings potential."
   ]
 
+  const wellCatAgg = data.reduce((acc, curr) => {
+    const key = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    if (!acc[key]) acc[key] = 0;
+    acc[key] += 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const miniDonutData = Object.entries(wellCatAgg).map(([name, value]) => ({ name, value })).filter(d => d.value > 0);
+  const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)'];
+
   return (
     <div className="flex flex-col p-6 space-y-4 animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold tracking-tight">Intervention Copilot</h1>
-        <p className="text-muted-foreground">Powered by Qwen 2.5 7B + Deterministic Analytics</p>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Intervention Copilot</h1>
+          <p className="text-muted-foreground">Powered by Qwen 2.5 7B + Deterministic Analytics</p>
+        </div>
+        <div className="hidden md:flex items-center gap-4 bg-muted/20 p-2 pr-6 rounded-full border">
+          <div className="h-12 w-12 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={miniDonutData} cx="50%" cy="50%" innerRadius={14} outerRadius={22} dataKey="value" paddingAngle={2}>
+                  {miniDonutData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '10px', padding: '4px 8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-xs">
+            <p className="font-semibold flex items-center gap-1"><Database className="w-3 h-3"/> Active Context</p>
+            <p className="text-muted-foreground">{data.length} Events Analyzed</p>
+          </div>
+        </div>
       </div>
 
       {/* Section 2: Analysis Buttons */}
