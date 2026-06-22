@@ -151,7 +151,7 @@ export default function InterventionIntelligence() {
     .sort((a, b) => b.RecoveryRate - a.RecoveryRate) // Sort by HIGHEST recovery rate
     .slice(0, 10);
 
-  // 8. Nested Pie Data (Category -> Well Type)
+  // 8. Nested Pie Data (Category -> Onshore/Offshore -> Well Type)
   const catAggPie = data.reduce((acc, curr) => {
     const cat = formatActionableCategory(curr.Category);
     if (!acc[cat]) acc[cat] = { name: cat, value: 0 };
@@ -160,19 +160,42 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const pieInnerData = Object.values(catAggPie).filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 5); // Top 5 cats for inner
 
+  const envAggPie = data.reduce((acc, curr) => {
+    const cat = formatActionableCategory(curr.Category);
+    if (!pieInnerData.find(d => d.name === cat)) return acc;
+    
+    const env = curr.OnshoreOffshore || 'Unknown';
+    const key = `${cat}-${env}`;
+    if (!acc[key]) acc[key] = { name: env, cat, value: 0 };
+    acc[key].value += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const pieMiddleData = Object.values(envAggPie).filter(d => d.value > 0).sort((a, b) => {
+    if (a.cat === b.cat) return b.value - a.value;
+    const catA = pieInnerData.findIndex(c => c.name === a.cat);
+    const catB = pieInnerData.findIndex(c => c.name === b.cat);
+    return catA - catB;
+  });
+
   const wellCatAggPie = data.reduce((acc, curr) => {
     const cat = formatActionableCategory(curr.Category);
     // Only include top 5 categories
     if (!pieInnerData.find(d => d.name === cat)) return acc;
 
+    const env = curr.OnshoreOffshore || 'Unknown';
     const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
-    const key = `${cat}-${wt}`;
-    if (!acc[key]) acc[key] = { name: wt, cat, value: 0 };
+    const key = `${cat}-${env}-${wt}`;
+    if (!acc[key]) acc[key] = { name: wt, cat, env, value: 0 };
     acc[key].value += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
   const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => {
-    if (a.cat === b.cat) return b.value - a.value;
+    if (a.cat === b.cat) {
+      if (a.env === b.env) return b.value - a.value;
+      const envA = pieMiddleData.findIndex(c => c.name === a.env && c.cat === a.cat);
+      const envB = pieMiddleData.findIndex(c => c.name === b.env && c.cat === b.cat);
+      return envA - envB;
+    }
     const catA = pieInnerData.findIndex(c => c.name === a.cat);
     const catB = pieInnerData.findIndex(c => c.name === b.cat);
     return catA - catB;
@@ -408,13 +431,13 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: Bubble Chart with Nested Pie Chart */}
+        {/* REPLACED: 3-Ring Bubble Chart with Nested Pie Chart */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
-            <CardDescription>Time saved by specific Categories (Inner) broken down by Well Type (Outer).</CardDescription>
+            <CardDescription>Time saved by Categories (Inner), Onshore/Offshore (Middle), and Well Type (Outer).</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px]">
+          <CardContent className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip 
@@ -422,15 +445,21 @@ export default function InterventionIntelligence() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
-                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={70}>
                   {pieInnerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120}>
+                <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={110}>
+                  {pieMiddleData.map((entry, index) => {
+                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
+                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.8} />
+                  })}
+                </Pie>
+                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={120} outerRadius={150}>
                   {pieOuterData.map((entry, index) => {
                     const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
-                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.7} />
+                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.6} />
                   })}
                 </Pie>
               </PieChart>
