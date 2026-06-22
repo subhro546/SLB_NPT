@@ -49,29 +49,41 @@ export default function DataExplorer() {
   const [globalFilter, setGlobalFilter] = useState("")
 
   const columns: ColumnDef<NPTRecord>[] = [
-    { accessorKey: "Well", header: "Well" },
-    { accessorKey: "Section", header: "Section" },
-    { accessorKey: "FieldName", header: "Field Name" },
+    { accessorKey: "EventNo", header: "Event No" },
+    { accessorKey: "RigName", header: "Rig Name" },
+    { accessorKey: "WellID", header: "Well ID" },
+    { accessorKey: "WellCategory", header: "Well Type" },
+    { accessorKey: "CompanyCode", header: "Company" },
+    { accessorKey: "CDE", header: "CDE" },
     { 
-      accessorKey: "NPTCategory", 
+      accessorKey: "Depth", 
+      header: "Depth",
+      cell: ({ row }) => `${row.getValue("Depth")}m`
+    },
+    { accessorKey: "OnshoreOffshore", header: "Environment" },
+    { 
+      accessorKey: "Category", 
       header: "Category",
       cell: ({ row }) => (
         <span className="flex items-center gap-2">
-          {row.getValue("NPTCategory") as string}
+          {row.getValue("Category") as string}
         </span>
       )
     },
-    { accessorKey: "NPTSubCategory", header: "Sub Category" },
-    { accessorKey: "ResponsibleParty", header: "Responsible Party" },
     { 
-      accessorKey: "NPTHours", 
-      header: "NPT Hours",
-      cell: ({ row }) => `${Number(row.getValue("NPTHours")).toFixed(1)}h`
+      accessorKey: "Hours", 
+      header: "Hours Lost",
+      cell: ({ row }) => `${Number(row.getValue("Hours")).toFixed(1)}h`
     },
     { 
-      accessorKey: "TimeSavedHours", 
+      accessorKey: "TimeSaved", 
       header: "Time Saved",
-      cell: ({ row }) => `${Number(row.getValue("TimeSavedHours")).toFixed(1)}h`
+      cell: ({ row }) => `${Number(row.getValue("TimeSaved")).toFixed(1)}h`
+    },
+    { 
+      accessorKey: "CostUSDPerDay", 
+      header: "Daily Rig Rate",
+      cell: ({ row }) => <span className="font-medium">{formatCurrency(row.getValue("CostUSDPerDay"))}</span>
     },
     { 
       accessorKey: "CostImpact", 
@@ -83,8 +95,6 @@ export default function DataExplorer() {
       header: "Cost Saved",
       cell: ({ row }) => <span className="text-emerald-600 font-medium">{formatCurrency(row.getValue("CostSaved"))}</span>
     },
-    { accessorKey: "StartDate", header: "Start Date" },
-    { accessorKey: "EndDate", header: "End Date" },
   ]
 
   const table = useReactTable({
