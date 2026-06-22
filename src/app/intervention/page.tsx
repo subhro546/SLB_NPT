@@ -61,6 +61,7 @@ export default function InterventionIntelligence() {
 
   // 1. Intervention Efficiency Ratio (Hours vs Time Saved)
   const effAgg = data.reduce((acc, curr) => {
+    if (curr.Category === 'Tool Failure' || curr.Category === 'Equipment/Tool Failure') return acc;
     if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Hours: 0, TimeSaved: 0 };
     acc[curr.Category].Hours += curr.Hours;
     acc[curr.Category].TimeSaved += curr.TimeSaved;
@@ -90,13 +91,22 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const onshoreOffshoreData = Object.values(onshoreOffshoreAgg).filter(d => d.TimeSaved > 0).sort((a, b) => b.TimeSaved - a.TimeSaved);
 
-  // 4. Cost Saving Rig Wise
+  // 4. Cost Saving Rig Wise (Total & Average)
   const rigCostAgg = data.reduce((acc, curr) => {
-    if (!acc[curr.RigName]) acc[curr.RigName] = { name: curr.RigName, CostSaved: 0 };
+    if (!acc[curr.RigName]) acc[curr.RigName] = { name: curr.RigName, CostSaved: 0, Events: 0 };
     acc[curr.RigName].CostSaved += curr.CostSaved;
+    acc[curr.RigName].Events += 1;
     return acc;
   }, {} as Record<string, any>);
-  const rigCostData = Object.values(rigCostAgg).filter(d => d.CostSaved > 0).sort((a, b) => b.CostSaved - a.CostSaved).slice(0, 10);
+  const rigCostData = Object.values(rigCostAgg)
+    .filter(d => d.CostSaved > 0)
+    .map(d => ({
+      name: d.name,
+      CostSaved: d.CostSaved,
+      AvgCostSaved: d.Events > 0 ? d.CostSaved / d.Events : 0
+    }))
+    .sort((a, b) => b.CostSaved - a.CostSaved)
+    .slice(0, 10);
 
   // 5. Event Distribution Rig Wise
   const rigEventAgg = data.reduce((acc, curr) => {
@@ -105,20 +115,6 @@ export default function InterventionIntelligence() {
     return acc;
   }, {} as Record<string, any>);
   const rigEventData = Object.values(rigEventAgg).sort((a, b) => b.Events - a.Events).slice(0, 10);
-
-  // 6. Average Cost Saved Rig Wise
-  const rigAvgCostAgg = data.reduce((acc, curr) => {
-    if (!acc[curr.RigName]) acc[curr.RigName] = { name: curr.RigName, CostSaved: 0, Events: 0 };
-    acc[curr.RigName].CostSaved += curr.CostSaved;
-    acc[curr.RigName].Events += 1;
-    return acc;
-  }, {} as Record<string, any>);
-  const rigAvgCostData = Object.values(rigAvgCostAgg)
-    .filter(r => r.CostSaved > 0)
-    .map(r => ({
-      name: r.name,
-      AvgCostSaved: r.Events > 0 ? r.CostSaved / r.Events : 0
-    })).sort((a, b) => b.AvgCostSaved - a.AvgCostSaved).slice(0, 10);
 
   // 7. Cumulative Event Trend Analysis (Event No)
   let cumulativeHours = 0;
@@ -311,24 +307,27 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: Cost Saving Rig Wise */}
-        <Card>
+        {/* REPLACED: Cost Saving Rig Wise (with Average Line) */}
+        <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Cost Saving Rig Wise</CardTitle>
-            <CardDescription>Total financial savings by top 10 rigs.</CardDescription>
+            <CardTitle>Financial Savings Impact Rig Wise</CardTitle>
+            <CardDescription>Total cost saved vs Average cost saved per event.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rigCostData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+              <ComposedChart data={rigCostData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
                 <Tooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value: any, name: any) => [formatCurrency(Number(value)), name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar isAnimationActive={false} dataKey="CostSaved" fill="var(--color-emerald-500)" radius={[4, 4, 0, 0]} name="Total Cost Saved" />
-              </BarChart>
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar yAxisId="left" isAnimationActive={false} dataKey="CostSaved" fill="var(--color-emerald-500)" radius={[4, 4, 0, 0]} name="Total Cost Saved" />
+                <Line yAxisId="right" isAnimationActive={false} type="monotone" dataKey="AvgCostSaved" stroke="var(--color-primary)" strokeWidth={3} name="Average Cost Saved" dot={{ r: 4 }} />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -350,28 +349,6 @@ export default function InterventionIntelligence() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 <Bar isAnimationActive={false} dataKey="Events" fill="var(--color-blue-500)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* REPLACED: Average Cost Saved Rig Wise */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Cost Saved Rig Wise</CardTitle>
-            <CardDescription>Average financial savings per event by rig.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rigAvgCostData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
-                <Tooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="AvgCostSaved" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} name="Avg Cost Saved" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
