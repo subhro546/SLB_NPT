@@ -116,33 +116,39 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const rigEventData = Object.values(rigEventAgg).sort((a, b) => b.Events - a.Events).slice(0, 10);
 
-  // 7. Actionable Analysis: Recovery Rate % and Cost of Inaction
+  // 7. Actionable Analysis: Top Recovery Rates (Category and Rig)
   const actionableAgg = data.reduce((acc, curr) => {
     if (curr.Category === 'Tool Failure' || curr.Category === 'Equipment/Tool Failure') return acc;
-    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Hours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Hours: 0, TimeSaved: 0 };
     acc[curr.Category].Hours += curr.Hours;
     acc[curr.Category].TimeSaved += curr.TimeSaved;
-    acc[curr.Category].CostImpact += curr.CostImpact;
-    acc[curr.Category].CostSaved += curr.CostSaved;
     return acc;
   }, {} as Record<string, any>);
 
-  const recoveryRateData = Object.values(actionableAgg)
+  const categoryRecoveryRateData = Object.values(actionableAgg)
     .filter(d => d.Hours > 0)
     .map(d => ({
       name: formatActionableCategory(d.name),
       RecoveryRate: Number(((d.TimeSaved / d.Hours) * 100).toFixed(1))
     }))
-    .sort((a, b) => a.RecoveryRate - b.RecoveryRate) // Sort by lowest recovery rate
+    .sort((a, b) => b.RecoveryRate - a.RecoveryRate) // Sort by HIGHEST recovery rate
     .slice(0, 10);
 
-  const costOfInactionData = Object.values(actionableAgg)
+  const rigActionableAgg = data.reduce((acc, curr) => {
+    if (curr.Category === 'Tool Failure' || curr.Category === 'Equipment/Tool Failure') return acc;
+    if (!acc[curr.RigName]) acc[curr.RigName] = { name: curr.RigName, Hours: 0, TimeSaved: 0 };
+    acc[curr.RigName].Hours += curr.Hours;
+    acc[curr.RigName].TimeSaved += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  const rigRecoveryRateData = Object.values(rigActionableAgg)
+    .filter(d => d.Hours > 0)
     .map(d => ({
-      name: formatActionableCategory(d.name),
-      UnrecoveredCost: d.CostImpact - d.CostSaved
+      name: d.name,
+      RecoveryRate: Number(((d.TimeSaved / d.Hours) * 100).toFixed(1))
     }))
-    .filter(d => d.UnrecoveredCost > 0)
-    .sort((a, b) => b.UnrecoveredCost - a.UnrecoveredCost) // Sort by highest unrecovered cost
+    .sort((a, b) => b.RecoveryRate - a.RecoveryRate) // Sort by HIGHEST recovery rate
     .slice(0, 10);
 
   // 8. Nested Pie Data (Category -> Well Type)
@@ -432,37 +438,15 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: Cost of Inaction */}
+        {/* REPLACED: Top Rig Recovery Rates */}
         <Card>
           <CardHeader>
-            <CardTitle>Cost of Inaction (Unrecovered Cost)</CardTitle>
-            <CardDescription>Financial loss from NPT that was NOT recovered via interventions.</CardDescription>
+            <CardTitle>Top Performing Rigs (Recovery Rate)</CardTitle>
+            <CardDescription>Rigs ranked by the highest percentage of NPT time successfully recovered.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={costOfInactionData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
-                <Tooltip 
-                  formatter={(value: any) => formatCurrency(Number(value))}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="UnrecoveredCost" fill="var(--color-destructive)" opacity={0.8} radius={[4, 4, 0, 0]} name="Unrecovered Cost" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* REPLACED: Recovery Rate */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lowest Intervention Recovery Rates</CardTitle>
-            <CardDescription>Categories sorted by lowest % of NPT time successfully recovered.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={recoveryRateData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+              <BarChart data={rigRecoveryRateData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
@@ -470,7 +454,29 @@ export default function InterventionIntelligence() {
                   formatter={(value: any) => [`${value}%`, 'Recovery Rate']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar isAnimationActive={false} dataKey="RecoveryRate" fill="var(--color-orange-500)" radius={[4, 4, 0, 0]} name="Recovery Rate" />
+                <Bar isAnimationActive={false} dataKey="RecoveryRate" fill="var(--color-primary)" opacity={0.9} radius={[4, 4, 0, 0]} name="Recovery Rate" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* REPLACED: Top Category Recovery Rates */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Most Successful Interventions by Category</CardTitle>
+            <CardDescription>Categories with the highest intervention success rate (Time Saved vs NPT Hours).</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryRecoveryRateData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}%`, 'Recovery Rate']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="RecoveryRate" fill="var(--color-emerald-500)" radius={[4, 4, 0, 0]} name="Recovery Rate" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
