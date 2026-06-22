@@ -33,6 +33,14 @@ export function useFilteredData(): NPTRecord[] {
       });
 
       return filtered.map(record => {
+        if (record.Category === "Tool Failure") {
+          return {
+            ...record,
+            TimeSaved: 0,
+            CostSaved: 0
+          };
+        }
+
         const N = categoryCounts[record.Category];
         // 72 hours per every 10 events (rounded up)
         const totalCategoryHours = Math.ceil(N / 10) * 72;

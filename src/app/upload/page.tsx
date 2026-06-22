@@ -47,6 +47,11 @@ export default function UploadPage() {
           const rawCategory = String(row['Category'] || 'Unknown');
           const normalizedCat = normalizeCategory(rawCategory);
           
+          let finalTimeSaved = Number(row['Time Saved']) || 0;
+          if (normalizedCat === "Tool Failure") {
+            finalTimeSaved = 0;
+          }
+          
           originalCats.add(rawCategory);
           normalizedCats.add(normalizedCat);
           if (rawCategory !== normalizedCat) {
@@ -64,10 +69,10 @@ export default function UploadPage() {
             OnshoreOffshore: String(row['Onshore/Offshore'] || 'Unknown'),
             Category: normalizedCat,
             Hours: hours,
-            TimeSaved: timeSaved,
+            TimeSaved: finalTimeSaved,
             CostUSDPerDay: costUSDPerDay,
             CostImpact: hours * (costUSDPerDay / 24),
-            CostSaved: timeSaved * (costUSDPerDay / 24)
+            CostSaved: finalTimeSaved * (costUSDPerDay / 24)
           }
         })
 
