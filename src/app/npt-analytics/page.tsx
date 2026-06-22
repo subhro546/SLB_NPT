@@ -6,7 +6,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, Scatter, Treemap
+  BarChart, PieChart, Pie, Cell, Legend, Scatter, Treemap
 } from 'recharts'
 import { FileSpreadsheet, AlertCircle, Activity, Gauge, Focus } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
