@@ -12,7 +12,12 @@ export function useFilteredData(): NPTRecord[] {
   return useMemo(() => {
     if (!activeDataset) return []
 
-    const filtered = activeDataset.records.filter(record => {
+    const filtered = activeDataset.records.map(r => {
+      if (r.Category === "Tool Failure") {
+        return { ...r, TimeSaved: 0, CostSaved: 0 };
+      }
+      return r;
+    }).filter(record => {
       // Legacy check, but ensure we use Category now instead of NPTCategory
       if (!isActionableCategory(record.Category)) return false
 
@@ -33,17 +38,16 @@ export function useFilteredData(): NPTRecord[] {
       });
 
       return filtered.map(record => {
-        if (record.Category === "Tool Failure") {
-          return {
-            ...record,
-            TimeSaved: 0,
-            CostSaved: 0
-          };
-        }
-
         const N = categoryCounts[record.Category];
         // 72 hours per every 10 events (rounded up)
         const totalCategoryHours = Math.ceil(N / 10) * 72;
+        
+        // If it's tool failure, it's already forced to 0 by the map above, 
+        // but we ensure we don't accidentally give it Method 2 savings here.
+        if (record.Category === "Tool Failure") {
+          return record;
+        }
+
         // Distribute equally across the N events
         const timeSaved = totalCategoryHours / N;
         const costSaved = (timeSaved / 24) * record.CostUSDPerDay;
