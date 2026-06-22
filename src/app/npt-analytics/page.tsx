@@ -141,6 +141,50 @@ export default function NPTAnalytics() {
     }))
     .sort((a, b) => b.size - a.size);
 
+  // --- New Rig-Based Analytics ---
+
+  // 6. Total NPT Hours by Rig
+  const rigHoursAgg = data.reduce((acc, curr) => {
+    if (!acc[curr.RigName]) acc[curr.RigName] = 0;
+    acc[curr.RigName] += curr.Hours;
+    return acc;
+  }, {} as Record<string, number>);
+  const rigHoursData = Object.entries(rigHoursAgg)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([RigName, Hours]) => ({ RigName, Hours }));
+
+  // 7. NPT Event Frequency by Rig
+  const rigFreqAgg = data.reduce((acc, curr) => {
+    if (!acc[curr.RigName]) acc[curr.RigName] = 0;
+    acc[curr.RigName] += 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const rigFreqData = Object.entries(rigFreqAgg)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([RigName, Events]) => ({ RigName, Events }));
+
+  // 8. Rig Risk Gap (P90 - P50 by Rig)
+  const top10RigsNames = rigHoursData.map(r => r.RigName);
+  const rigDurations = top10RigsNames.reduce((acc, rig) => {
+    acc[rig] = data.filter(d => d.RigName === rig).map(d => d.Hours).sort((a, b) => a - b);
+    return acc;
+  }, {} as Record<string, number[]>);
+
+  const rigPercentileData = top10RigsNames.map(rig => {
+    const P10 = getPercentile(rigDurations[rig], 10);
+    const P50 = getPercentile(rigDurations[rig], 50);
+    const P90 = getPercentile(rigDurations[rig], 90);
+    return {
+      RigName: rig,
+      riskGap: P90 - P50,
+      spread: P90 - P10
+    };
+  }).filter(d => rigDurations[d.RigName].length >= 3) // Need some events to calculate percentiles meaningfully
+    .sort((a, b) => b.riskGap - a.riskGap)
+    .slice(0, 10);
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -345,6 +389,72 @@ export default function NPTAnalytics() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
               </Treemap>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Total NPT Hours by Rig */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total NPT Hours by Rig</CardTitle>
+            <CardDescription>Rigs ranked by total hours lost to NPT.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={rigHoursData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="RigName" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <RechartsTooltip 
+                  formatter={(value: any) => [`${Number(value).toFixed(1)} hrs`, 'Hours Lost']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="Hours" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} name="Hours Lost" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: NPT Event Frequency by Rig */}
+        <Card>
+          <CardHeader>
+            <CardTitle>NPT Frequency by Rig</CardTitle>
+            <CardDescription>Rigs ranked by number of NPT events encountered.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={rigFreqData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="RigName" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <RechartsTooltip 
+                  formatter={(value: any) => [`${value} Events`, 'Frequency']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="Events" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Events" opacity={0.8} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Rig Risk Gap (P90-P50) */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Rig Unpredictability (P90-P50 Risk Gap)</CardTitle>
+            <CardDescription>Extra hours consumed when a rig's operations slip past their median.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={rigPercentileData} margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="RigName" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <RechartsTooltip 
+                  formatter={(value: any) => [`+${Number(value).toFixed(1)} hrs`, 'Risk Gap']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="riskGap" fill="var(--color-orange-500)" radius={[4, 4, 0, 0]} name="Risk Gap" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
