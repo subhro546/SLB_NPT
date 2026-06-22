@@ -6,7 +6,8 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend, PieChart, Pie, Cell
+  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend, PieChart, Pie, Cell,
+  AreaChart, Area
 } from 'recharts'
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
@@ -119,12 +120,18 @@ export default function InterventionIntelligence() {
     };
   });
 
-  // 7. Event Trend Analysis (Event No)
-  const trendData = [...data].sort((a, b) => a.EventNo - b.EventNo).map(d => ({
-    EventNo: d.EventNo,
-    TimeSaved: d.TimeSaved,
-    Hours: d.Hours
-  }));
+  // 7. Cumulative Event Trend Analysis (Event No)
+  let cumulativeHours = 0;
+  let cumulativeSaved = 0;
+  const trendData = [...data].sort((a, b) => a.EventNo - b.EventNo).map(d => {
+    cumulativeHours += d.Hours;
+    cumulativeSaved += d.TimeSaved;
+    return {
+      EventNo: d.EventNo,
+      TimeSaved: cumulativeSaved,
+      Hours: cumulativeHours
+    };
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -370,15 +377,25 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* Event Trend Analysis */}
+        {/* Cumulative Event Trend Analysis */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Event Trend Analysis</CardTitle>
-            <CardDescription>Tracking hours lost vs time saved over consecutive events.</CardDescription>
+            <CardTitle>Cumulative Impact Trend</CardTitle>
+            <CardDescription>Tracking cumulative hours lost vs time saved over consecutive events.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <AreaChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <defs>
+                  <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-destructive)" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="var(--color-destructive)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorSaved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-emerald-500)" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="var(--color-emerald-500)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="EventNo" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
@@ -387,9 +404,9 @@ export default function InterventionIntelligence() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Line type="monotone" dataKey="Hours" stroke="var(--color-destructive)" strokeWidth={2} dot={false} name="Hours Lost" />
-                <Line type="monotone" dataKey="TimeSaved" stroke="var(--color-emerald-500)" strokeWidth={2} dot={false} name="Time Saved" />
-              </ComposedChart>
+                <Area type="monotone" dataKey="Hours" stroke="var(--color-destructive)" fillOpacity={1} fill="url(#colorHours)" name="Cumulative Hours Lost" />
+                <Area type="monotone" dataKey="TimeSaved" stroke="var(--color-emerald-500)" fillOpacity={1} fill="url(#colorSaved)" name="Cumulative Time Saved" />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
