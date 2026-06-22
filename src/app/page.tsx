@@ -6,12 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useAppStore } from "@/store/useAppStore"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, RadialBarChart, RadialBar, PolarAngleAxis
+  PieChart, Pie, Cell, Legend, Treemap
 } from 'recharts'
 import { FileSpreadsheet, TrendingDown, Clock, DollarSign, Activity, Target } from "lucide-react"
 import { isActionableCategory, formatActionableCategory } from "@/lib/constants"
 
 const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-destructive)'];
+const TREEMAP_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+
+const TreemapContent = (props: any) => {
+  const { x, y, width, height, name, index, size } = props;
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height} style={{ fill: TREEMAP_COLORS[index % TREEMAP_COLORS.length], stroke: 'hsl(var(--background))', strokeWidth: 2 }} />
+      {width > 60 && height > 30 && (
+        <text x={x + 6} y={y + 20} fill="#fff" fontSize={11} className="font-semibold drop-shadow-md">
+          {name}
+        </text>
+      )}
+    </g>
+  );
+};
 
 export default function ExecutiveCommandCenter() {
   const data = useFilteredData()
@@ -98,17 +113,14 @@ export default function ExecutiveCommandCenter() {
 
   const wellCategoryData = Object.values(wellCatAgg);
 
-  // 7. Overall Efficiency Realization
-  const maxPossibleSavings = totalHoursLost;
-  const efficiencyRatio = maxPossibleSavings > 0 ? (totalTimeSaved / maxPossibleSavings) * 100 : 0;
-  
-  const radialData = [
-    {
-      name: 'Efficiency',
-      value: efficiencyRatio,
-      fill: 'var(--color-emerald-500)',
-    }
-  ];
+  // 7. Cost Impact Treemap Breakdown
+  const treeMapData = Object.values(categoryAgg)
+    .filter(cat => cat.CostImpact > 0)
+    .map(cat => ({
+      name: formatActionableCategory(cat.name),
+      size: cat.CostImpact
+    }))
+    .sort((a, b) => b.size - a.size);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -177,33 +189,27 @@ export default function ExecutiveCommandCenter() {
         </Card>
       </div>
 
-      {/* NEW: Efficiency Realization Radial Chart */}
+      {/* NEW: Cost Impact Treemap */}
       <div className="grid gap-6 md:grid-cols-3 mb-6">
-        <Card className="col-span-1 md:col-span-3 lg:col-span-1">
+        <Card className="col-span-1 md:col-span-3 lg:col-span-3">
           <CardHeader>
-            <CardTitle>Efficiency Realization Ratio</CardTitle>
-            <CardDescription>Total Time Saved vs Hours Lost.</CardDescription>
+            <CardTitle>Cost Impact Breakdown (Treemap)</CardTitle>
+            <CardDescription>Visualizing financial leaks by category proportional footprint.</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart 
-                cx="50%" cy="50%" 
-                innerRadius="70%" outerRadius="90%" 
-                barSize={20} 
-                data={radialData}
-                startAngle={90}
-                endAngle={-270}
+              <Treemap
+                data={treeMapData}
+                dataKey="size"
+                aspectRatio={4 / 3}
+                stroke="#fff"
+                content={<TreemapContent />}
               >
-                <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                <RadialBar
-                  background={{ fill: 'var(--color-muted)', opacity: 0.2 }}
-                  dataKey="value"
-                  cornerRadius={10}
+                <Tooltip 
+                  formatter={(value: any) => formatCurrency(Number(value))}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-4xl font-bold" fill="var(--color-foreground)">
-                  {`${efficiencyRatio.toFixed(1)}%`}
-                </text>
-              </RadialBarChart>
+              </Treemap>
             </ResponsiveContainer>
           </CardContent>
         </Card>
