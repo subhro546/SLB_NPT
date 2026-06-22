@@ -116,14 +116,34 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const rigEventData = Object.values(rigEventAgg).sort((a, b) => b.Events - a.Events).slice(0, 10);
 
-  // 7. Statistical Correlation (Scatter: Hours vs Time Saved)
-  const scatterData = data
-    .filter(d => d.TimeSaved > 0 && d.Hours > 0)
+  // 7. Actionable Analysis: Recovery Rate % and Cost of Inaction
+  const actionableAgg = data.reduce((acc, curr) => {
+    if (curr.Category === 'Tool Failure' || curr.Category === 'Equipment/Tool Failure') return acc;
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Hours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[curr.Category].Hours += curr.Hours;
+    acc[curr.Category].TimeSaved += curr.TimeSaved;
+    acc[curr.Category].CostImpact += curr.CostImpact;
+    acc[curr.Category].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  const recoveryRateData = Object.values(actionableAgg)
+    .filter(d => d.Hours > 0)
     .map(d => ({
-      Hours: Number(d.Hours.toFixed(1)),
-      TimeSaved: Number(d.TimeSaved.toFixed(1)),
-      Category: formatActionableCategory(d.Category)
-    }));
+      name: formatActionableCategory(d.name),
+      RecoveryRate: Number(((d.TimeSaved / d.Hours) * 100).toFixed(1))
+    }))
+    .sort((a, b) => a.RecoveryRate - b.RecoveryRate) // Sort by lowest recovery rate
+    .slice(0, 10);
+
+  const costOfInactionData = Object.values(actionableAgg)
+    .map(d => ({
+      name: formatActionableCategory(d.name),
+      UnrecoveredCost: d.CostImpact - d.CostSaved
+    }))
+    .filter(d => d.UnrecoveredCost > 0)
+    .sort((a, b) => b.UnrecoveredCost - a.UnrecoveredCost) // Sort by highest unrecovered cost
+    .slice(0, 10);
 
   // 8. Nested Pie Data (Category -> Well Type)
   const catAggPie = data.reduce((acc, curr) => {
@@ -412,28 +432,46 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: Statistical Correlation Scatter Chart */}
-        <Card className="col-span-1 lg:col-span-2">
+        {/* REPLACED: Cost of Inaction */}
+        <Card>
           <CardHeader>
-            <CardTitle>Intervention Yield Correlation</CardTitle>
-            <CardDescription>Statistical relationship between NPT Severity (Hours Lost) and Time Successfully Recovered.</CardDescription>
+            <CardTitle>Cost of Inaction (Unrecovered Cost)</CardTitle>
+            <CardDescription>Financial loss from NPT that was NOT recovered via interventions.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <BarChart data={costOfInactionData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis type="number" dataKey="Hours" name="NPT Hours Lost" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
-                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
                 <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }}
+                  formatter={(value: any) => formatCurrency(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                  formatter={(value: any, name: any, props: any) => {
-                    if (name === 'Category') return [value, name];
-                    return [`${value} hrs`, name];
-                  }}
                 />
-                <Scatter name="Interventions" data={scatterData} fill="var(--color-primary)" fillOpacity={0.6} />
-              </ScatterChart>
+                <Bar isAnimationActive={false} dataKey="UnrecoveredCost" fill="var(--color-destructive)" opacity={0.8} radius={[4, 4, 0, 0]} name="Unrecovered Cost" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* REPLACED: Recovery Rate */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lowest Intervention Recovery Rates</CardTitle>
+            <CardDescription>Categories sorted by lowest % of NPT time successfully recovered.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={recoveryRateData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}%`, 'Recovery Rate']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="RecoveryRate" fill="var(--color-orange-500)" radius={[4, 4, 0, 0]} name="Recovery Rate" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
