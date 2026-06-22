@@ -12,6 +12,8 @@ import {
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
 
+const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-destructive)'];
+
 export default function InterventionIntelligence() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
@@ -133,13 +135,24 @@ export default function InterventionIntelligence() {
     };
   });
 
-  // 8. Bubble Chart Data (Hours vs Time Saved vs Cost)
-  const bubbleData = data.filter(d => d.Hours > 0).map(d => ({
-    Hours: d.Hours,
-    TimeSaved: d.TimeSaved,
-    CostSaved: d.CostSaved,
-    Category: formatActionableCategory(d.Category)
-  }));
+  // 8. Nested Pie Data (Well Type -> Category)
+  const wellTypeAggPie = data.reduce((acc, curr) => {
+    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    if (!acc[wt]) acc[wt] = { name: wt, value: 0 };
+    acc[wt].value += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const pieInnerData = Object.values(wellTypeAggPie).filter(d => d.value > 0);
+
+  const wellCatAggPie = data.reduce((acc, curr) => {
+    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    const cat = formatActionableCategory(curr.Category);
+    const key = `${wt}-${cat}`;
+    if (!acc[key]) acc[key] = { name: cat, wt, value: 0 };
+    acc[key].value += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => a.wt.localeCompare(b.wt));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -385,29 +398,30 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: Bubble Chart (Hours vs Time Saved vs Cost Saved) */}
+        {/* REPLACED: Bubble Chart with Nested Pie Chart */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Intervention Impact Quadrant (Bubble Chart)</CardTitle>
-            <CardDescription>Correlation between hours lost (X), time saved (Y), and cost saved (Bubble Size).</CardDescription>
+            <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
+            <CardDescription>Time saved by Well Type (Inner) and specific Categories (Outer).</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" dataKey="Hours" name="Hours Lost" unit="h" tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="TimeSaved" name="Time Saved" unit="h" tick={{ fontSize: 11 }} />
-                <ZAxis type="number" dataKey="CostSaved" range={[60, 500]} name="Cost Saved" />
+              <PieChart>
                 <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }} 
+                  formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                  formatter={(value: any, name: any) => {
-                    if (name === 'Cost Saved') return formatCurrency(Number(value));
-                    return `${Number(value).toFixed(1)}h`;
-                  }}
                 />
-                <Scatter name="Interventions" data={bubbleData} fill="var(--color-primary)" opacity={0.6} />
-              </ScatterChart>
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={80} fill="var(--color-chart-2)">
+                  {pieInnerData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={90} outerRadius={120} fill="var(--color-chart-3)" label={({ name }) => name}>
+                  {pieOuterData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
