@@ -112,7 +112,8 @@ export function prepareVisualizationContext(records: NPTRecord[]) {
 
   // Aggregate data by Well Type
   const byWellType = records.reduce((acc, curr) => {
-    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
+    const wt = curr.WellCategory === 'D' ? 'Development' : 'Exploratory';
     if (!acc[wt]) acc[wt] = { WellType: wt, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
     acc[wt].Events += 1;
     acc[wt].NPTHours += curr.Hours;

@@ -76,10 +76,10 @@ export default function InterventionIntelligence() {
 
   // 2. Category Matrix by Well Type
   const matrixAgg = data.reduce((acc, curr) => {
-    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Development: 0, Exploratory: 0, Unknown: 0 };
+    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
+    if (!acc[curr.Category]) acc[curr.Category] = { name: curr.Category, Development: 0, Exploratory: 0 };
     if (curr.WellCategory === 'D') acc[curr.Category].Development += curr.TimeSaved;
     else if (curr.WellCategory === 'E') acc[curr.Category].Exploratory += curr.TimeSaved;
-    else acc[curr.Category].Unknown += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
   const matrixData = Object.values(matrixAgg).sort((a, b) => (b.Development + b.Exploratory) - (a.Development + a.Exploratory)).slice(0, 10);
@@ -185,7 +185,8 @@ export default function InterventionIntelligence() {
     if (!pieInnerData.find(d => d.name === cat)) return acc;
 
     const env = curr.OnshoreOffshore || 'Unknown';
-    const wt = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
+    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
+    const wt = curr.WellCategory === 'D' ? 'Development' : 'Exploratory';
     const key = `${cat}-${env}-${wt}`;
     if (!acc[key]) acc[key] = { name: wt, cat, env, value: 0 };
     acc[key].value += curr.TimeSaved;
