@@ -68,7 +68,7 @@ export default function ExecutiveCommandCenter() {
     .sort((a, b) => b.TimeSaved - a.TimeSaved)
     .slice(0, 10);
 
-  // 4. Time Saved by Company Code
+  // 4. Time Saved by Asset
   const companyAgg = data.reduce((acc, curr) => {
     if (!acc[curr.CompanyCode]) acc[curr.CompanyCode] = { name: curr.CompanyCode, TimeSaved: 0 };
     acc[curr.CompanyCode].TimeSaved += curr.TimeSaved;
@@ -281,10 +281,10 @@ export default function ExecutiveCommandCenter() {
           </CardContent>
         </Card>
 
-        {/* Time Saved by Company Code */}
+        {/* Time Saved by Asset */}
         <Card>
           <CardHeader>
-            <CardTitle>Time Saved by Company Code</CardTitle>
+            <CardTitle>Time Saved by Asset</CardTitle>
             <CardDescription>Operators successfully applying interventions.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">

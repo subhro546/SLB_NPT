@@ -216,7 +216,7 @@ export default function InterventionIntelligence() {
               <Trophy className="h-6 w-6 text-emerald-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">Highest Performing Category</p>
+              <p className="text-sm text-muted-foreground font-medium">Highest Performance</p>
               <h3 className="text-lg font-bold truncate max-w-[150px]" title={highestCategory?.name}>
                 {highestCategory ? formatActionableCategory(highestCategory.name) : 'N/A'}
               </h3>

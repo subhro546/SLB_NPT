@@ -83,7 +83,7 @@ export function GlobalFilters() {
           onValueChange={(val) => setGlobalFilters({ companyCodes: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Company Code:</span>
+            <span className="text-muted-foreground mr-1">Asset:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
