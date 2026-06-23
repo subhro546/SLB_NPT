@@ -461,12 +461,12 @@ export default function InterventionIntelligence() {
         </Card>
 
         {/* REPLACED: 3-Ring Bubble Chart with Nested Pie Chart */}
-        <Card className="col-span-1 lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
             <CardDescription>Time saved by Categories (Inner) and Onshore/Offshore (Outer).</CardDescription>
           </CardHeader>
-          <CardContent className="h-[500px]">
+          <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip 
