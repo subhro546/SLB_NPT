@@ -20,6 +20,7 @@ export const navigation = [
   { name: 'Command Center', href: '/', icon: LayoutDashboard },
   { name: 'Intervention Intelligence', href: '/intervention', icon: TrendingDown },
   { name: 'NPT Analytics', href: '/npt-analytics', icon: LineChart },
+  { name: 'Rig Analytics', href: '/well-analytics', icon: Target },
   { name: 'AI Decision Intelligence', href: '/ai-decision-intelligence', icon: BrainCircuit },
   { name: 'Data Explorer', href: '/data-explorer', icon: Database },
   { name: 'Data Ingestion', href: '/upload', icon: Upload },
