@@ -91,7 +91,7 @@ export default function ExecutiveCommandCenter() {
 
   // 6. Development vs Exploratory Comparison
   const wellCatAgg = data.reduce((acc, curr) => {
-    const key = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : curr.WellCategory || 'Unknown';
+    const key = curr.WellCategory === 'D' ? 'Development' : curr.WellCategory === 'E' ? 'Exploratory' : 'Unknown';
     if (!acc[key]) acc[key] = { name: key, TimeSaved: 0 };
     acc[key].TimeSaved += curr.TimeSaved;
     return acc;
