@@ -44,23 +44,34 @@ Aggregated Analytics Data (Source of Truth - NEVER invent numbers):
 ${JSON.stringify(analyticsData, null, 2)}
 
 Your task is to:
-1. Select the most appropriate chart type: 'bar', 'pie', 'line', or 'scatter'.
-2. Select the correct array from the aggregated data (e.g. aggregatedByCategory, aggregatedByRig) that answers the user's question.
-3. Determine the 'xAxisKey' (for the label, e.g. "Category" or "RigName") and 'yAxisKey' (for the value, e.g. "TimeSaved" or "CostImpact").
-4. Provide a brief executive summary explaining the visualization.
+1. Determine the EXACT chart intent from the user query.
+2. Select the correct array from the aggregated data (e.g., aggregatedByEnvironment for onshore/offshore, aggregatedByCategory for categories, aggregatedByRig for rigs, etc.).
+3. NEVER generate a generic category chart unless the question is specifically category-related.
+4. If the intent is not understood or the requested grouping isn't available in the data, set "clarificationRequired": true instead of generating a chart.
+5. If understood, select the most appropriate chart type: 'bar', 'pie', 'line', or 'scatter'.
+6. Determine the 'xAxisKey' (e.g. "Environment", "CompanyCode", "RigName") and 'yAxisKey' (e.g. "TimeSaved", "CostImpact", "Events").
+7. Ensure the chart title, axis labels, and data source MATCH the user question exactly.
+8. Provide a brief executive summary explaining the visualization.
 
 Requirements:
 - Output strictly valid JSON without any markdown formatting, backticks, or extra text.
 
-JSON Structure:
+JSON Structure (if successful):
 {
   "chartOptions": {
+    "title": "Onshore vs Offshore Performance",
     "chartType": "bar",
-    "data": [{"Category": "Tool Failure", "TimeSaved": 100}, ...],
-    "xAxisKey": "Category",
+    "data": [{"Environment": "Onshore", "TimeSaved": 100}, ...],
+    "xAxisKey": "Environment",
     "yAxisKey": "TimeSaved"
   },
   "summary": "Executive summary here..."
+}
+
+JSON Structure (if clarification required):
+{
+  "clarificationRequired": true,
+  "summary": "I'm not sure how you'd like to group this data. Could you specify if you want it by rig, category, environment, or company?"
 }
 `;
 
@@ -76,6 +87,9 @@ JSON Structure:
       
       try {
         const parsed = JSON.parse(rawResponse);
+        if (parsed.clarificationRequired) {
+          return NextResponse.json({ summary: parsed.summary });
+        }
         return NextResponse.json({ 
           summary: parsed.summary || "Here is your visualization.", 
           chartConfig: parsed.chartOptions 

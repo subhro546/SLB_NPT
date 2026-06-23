@@ -122,9 +122,35 @@ export function prepareVisualizationContext(records: NPTRecord[]) {
     return acc;
   }, {} as Record<string, any>);
 
+  // Aggregate data by OnshoreOffshore
+  const byEnvironment = records.reduce((acc, curr) => {
+    const env = curr.OnshoreOffshore || 'Unknown';
+    if (!acc[env]) acc[env] = { Environment: env, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[env].Events += 1;
+    acc[env].NPTHours += curr.Hours;
+    acc[env].TimeSaved += curr.TimeSaved;
+    acc[env].CostImpact += curr.CostImpact;
+    acc[env].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Aggregate data by CompanyCode
+  const byCompany = records.reduce((acc, curr) => {
+    const cc = curr.CompanyCode || 'Unknown';
+    if (!acc[cc]) acc[cc] = { CompanyCode: cc, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[cc].Events += 1;
+    acc[cc].NPTHours += curr.Hours;
+    acc[cc].TimeSaved += curr.TimeSaved;
+    acc[cc].CostImpact += curr.CostImpact;
+    acc[cc].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
   return {
     aggregatedByCategory: Object.values(byCategory),
     aggregatedByRig: Object.values(byRig),
-    aggregatedByWellType: Object.values(byWellType)
+    aggregatedByWellType: Object.values(byWellType),
+    aggregatedByEnvironment: Object.values(byEnvironment),
+    aggregatedByCompanyCode: Object.values(byCompany)
   };
 }
