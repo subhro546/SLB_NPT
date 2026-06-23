@@ -194,30 +194,7 @@ export default function InterventionIntelligence() {
     return catA - catB;
   });
 
-  const wellCatAggPie = data.reduce((acc, curr) => {
-    const cat = formatActionableCategory(curr.Category);
-    // Only include top 5 categories
-    if (!pieInnerData.find(d => d.name === cat)) return acc;
 
-    const env = curr.OnshoreOffshore || 'Unknown';
-    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
-    const wt = curr.WellCategory === 'D' ? 'Development' : 'Exploratory';
-    const key = `${cat}-${env}-${wt}`;
-    if (!acc[key]) acc[key] = { name: wt, cat, env, value: 0 };
-    acc[key].value += curr.TimeSaved;
-    return acc;
-  }, {} as Record<string, any>);
-  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => {
-    if (a.cat === b.cat) {
-      if (a.env === b.env) return b.value - a.value;
-      const envA = pieMiddleData.findIndex(c => c.name === a.env && c.cat === a.cat);
-      const envB = pieMiddleData.findIndex(c => c.name === b.env && c.cat === b.cat);
-      return envA - envB;
-    }
-    const catA = pieInnerData.findIndex(c => c.name === a.cat);
-    const catB = pieInnerData.findIndex(c => c.name === b.cat);
-    return catA - catB;
-  });
 
   // 9. Time Series of Interventions
   const tsAgg = data.reduce((acc, curr) => {
@@ -487,7 +464,7 @@ export default function InterventionIntelligence() {
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
-            <CardDescription>Time saved by Categories (Inner), Onshore/Offshore (Middle), and Well Type (Outer).</CardDescription>
+            <CardDescription>Time saved by Categories (Inner) and Onshore/Offshore (Outer).</CardDescription>
           </CardHeader>
           <CardContent className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -504,11 +481,6 @@ export default function InterventionIntelligence() {
                 <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={120} label={renderCustomizedLabel} labelLine={false}>
                   {pieMiddleData.map((entry, index) => {
                     return <Cell key={`cell-${index}`} fill={MIDDLE_COLORS[index % MIDDLE_COLORS.length]} fillOpacity={0.9} />
-                  })}
-                </Pie>
-                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={130} outerRadius={170} label={renderCustomizedLabel} labelLine={false}>
-                  {pieOuterData.map((entry, index) => {
-                    return <Cell key={`cell-${index}`} fill={OUTER_COLORS[index % OUTER_COLORS.length]} fillOpacity={0.8} />
                   })}
                 </Pie>
               </PieChart>
