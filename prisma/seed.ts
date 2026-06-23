@@ -11,7 +11,7 @@ async function main() {
   
   console.log('Seeding database from Excel file...');
   
-  const filePath = path.resolve('/Users/subhro/RTDMMA/Intervention_Event_Dataset_Final_With_CompanyCode.xlsx')
+  const filePath = path.resolve('/Users/subhro/RTDMMA/Intervention_Dataset_Interventions_Only_Dates.xlsx')
   const workbook = XLSX.readFile(filePath)
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
@@ -26,14 +26,22 @@ async function main() {
   for (let i = 0; i < validData.length; i++) {
     const row = validData[i];
     const hours = Number(row['Hours']) || 0;
-    const timeSaved = Number(row['Time Saved']) || 0;
     const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
 
     const rawCategory = String(row['Category'] || 'Unknown');
     const normalizedCat = normalizeCategory(rawCategory);
 
     const costImpact = hours * (costUSDPerDay / 24);
-    const costSaved = timeSaved * (costUSDPerDay / 24);
+    
+    let finalTimeSaved = Number(row['Time Saved']) || 0;
+    let finalCostSaved = Number(row['Cost Saved']) || 0;
+
+    if (normalizedCat === "Tool Failure" || normalizedCat === "Equipment/Tool Failure" || normalizedCat === "Equipment Failure") {
+      finalTimeSaved = 0;
+      finalCostSaved = 0;
+    } else if (finalCostSaved === 0 && finalTimeSaved > 0) {
+      finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
+    }
 
     recordsToInsert.push({
       eventNo: Number(row['Event No']) || i + 1,
@@ -46,10 +54,10 @@ async function main() {
       onshoreOffshore: String(row['Onshore/Offshore'] || 'Unknown'),
       category: normalizedCat,
       hours: hours,
-      timeSaved: timeSaved,
+      timeSaved: finalTimeSaved,
       costUsdPerDay: costUSDPerDay,
       costImpact: costImpact,
-      costSaved: costSaved
+      costSaved: finalCostSaved
     });
   }
 

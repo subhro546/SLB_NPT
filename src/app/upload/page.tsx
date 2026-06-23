@@ -41,15 +41,19 @@ export default function UploadPage() {
         // Validation and Transformation
         const records: NPTRecord[] = validJson.map((row: any, index) => {
           const hours = Number(row['Hours']) || 0;
-          const timeSaved = Number(row['Time Saved']) || 0;
           const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
 
           const rawCategory = String(row['Category'] || 'Unknown');
           const normalizedCat = normalizeCategory(rawCategory);
           
           let finalTimeSaved = Number(row['Time Saved']) || 0;
-          if (normalizedCat === "Tool Failure") {
+          let finalCostSaved = Number(row['Cost Saved']) || 0;
+
+          if (normalizedCat === "Tool Failure" || normalizedCat === "Equipment/Tool Failure" || normalizedCat === "Equipment Failure") {
             finalTimeSaved = 0;
+            finalCostSaved = 0;
+          } else if (finalCostSaved === 0 && finalTimeSaved > 0) {
+            finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
           }
           
           originalCats.add(rawCategory);
@@ -72,7 +76,7 @@ export default function UploadPage() {
             TimeSaved: finalTimeSaved,
             CostUSDPerDay: costUSDPerDay,
             CostImpact: hours * (costUSDPerDay / 24),
-            CostSaved: finalTimeSaved * (costUSDPerDay / 24)
+            CostSaved: finalCostSaved
           }
         })
 

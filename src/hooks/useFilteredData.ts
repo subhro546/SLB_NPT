@@ -33,21 +33,24 @@ export function useFilteredData(): NPTRecord[] {
     // Apply the Savings Method overrides
     if (savingsMethod === 'method2') {
       const categoryCounts: Record<string, number> = {};
+      const categoryHasRawSavings: Record<string, boolean> = {};
+
       filtered.forEach(r => {
         categoryCounts[r.Category] = (categoryCounts[r.Category] || 0) + 1;
+        if (r.TimeSaved > 0) {
+          categoryHasRawSavings[r.Category] = true;
+        }
       });
 
       return filtered.map(record => {
+        if (!categoryHasRawSavings[record.Category] || record.Category === "Tool Failure") {
+          return record;
+        }
+
         const N = categoryCounts[record.Category];
         // 72 hours per every 10 events (rounded up)
         const totalCategoryHours = Math.ceil(N / 10) * 72;
         
-        // If it's tool failure, it's already forced to 0 by the map above, 
-        // but we ensure we don't accidentally give it Method 2 savings here.
-        if (record.Category === "Tool Failure") {
-          return record;
-        }
-
         // Distribute equally across the N events
         const timeSaved = totalCategoryHours / N;
         const costSaved = (timeSaved / 24) * record.CostUSDPerDay;

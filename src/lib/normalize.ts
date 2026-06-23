@@ -30,6 +30,9 @@ const SEMANTIC_MAP: Record<string, string> = {
   // Weather
   "Wait On Weather": "Waiting on Weather",
   "Waiting For Weather": "Waiting on Weather",
+  
+  // Mud
+  "Loss Control": "Mud Loss",
 };
 
 export function normalizeCategory(rawCategory: string | undefined | null): string {
