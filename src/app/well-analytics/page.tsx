@@ -38,20 +38,15 @@ function RigDashboard({ title, rigData, isAggregate = false }: { title: string, 
     .sort((a: any, b: any) => b.value - a.value)
     .slice(0, 5)
 
-  // Timeline (by month)
-  const timelineMap = rigData.reduce((acc, curr) => {
-    if (!curr.StartDate) return acc;
-    const date = new Date(curr.StartDate);
-    if (isNaN(date.getTime())) return acc;
-    
-    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    if (!acc[month]) acc[month] = { month, Hours: 0, CostImpact: 0 };
-    acc[month].Hours += (curr.Hours / uniqueRigsCount);
-    acc[month].CostImpact += (curr.CostImpact / uniqueRigsCount);
+  // Event Frequency by Category
+  const eventCountMap = rigData.reduce((acc, curr) => {
+    const cat = curr.Category || 'Unknown';
+    if (!acc[cat]) acc[cat] = { category: cat, count: 0 };
+    acc[cat].count += (1 / uniqueRigsCount);
     return acc;
-  }, {} as Record<string, { month: string, Hours: number, CostImpact: number }>);
+  }, {} as Record<string, { category: string, count: number }>);
   
-  const timelineData = Object.values(timelineMap).sort((a: any, b: any) => a.month.localeCompare(b.month));
+  const eventCountData = Object.values(eventCountMap).sort((a: any, b: any) => b.count - a.count).slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -111,18 +106,19 @@ function RigDashboard({ title, rigData, isAggregate = false }: { title: string, 
 
         <Card>
           <CardHeader className="py-3">
-            <CardTitle className="text-sm">NPT Timeline (Monthly)</CardTitle>
+            <CardTitle className="text-sm">Event Frequency by Category</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] pb-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={timelineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={eventCountData} margin={{ top: 5, right: 10, left: -20, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                <XAxis dataKey="category" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={25} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip 
+                  formatter={(value: any) => [`${Number(value).toFixed(1)} events`, 'Frequency']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Bar isAnimationActive={false} dataKey="Hours" fill="var(--color-primary)" radius={[2, 2, 0, 0]} />
+                <Bar isAnimationActive={false} dataKey="count" fill="var(--color-primary)" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
