@@ -55,7 +55,9 @@ export default function InterventionIntelligence() {
   const topRigs = Object.values(rigAgg).sort((a, b) => b.TimeSaved - a.TimeSaved).slice(0, 10);
   const highestRig = topRigs[0];
 
-  const largestOpportunity = [...catArr].sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
+  const largestOpportunity = [...catArr]
+    .filter(cat => cat.name !== 'Tool Failure' && cat.name !== 'Equipment/Tool Failure')
+    .sort((a, b) => (b.CostImpact - b.CostSaved) - (a.CostImpact - a.CostSaved))[0];
 
   // --- NEW DEEP-DIVE CHARTS ---
 
