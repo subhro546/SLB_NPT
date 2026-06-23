@@ -12,7 +12,7 @@ async function main() {
   console.log('Seeding database from Excel file...');
   
   const filePath = path.resolve('/Users/subhro/RTDMMA/Intervention_Dataset_Interventions_Only_Dates.xlsx')
-  const workbook = XLSX.readFile(filePath)
+  const workbook = XLSX.readFile(filePath, { cellDates: true })
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
   const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
@@ -43,6 +43,11 @@ async function main() {
       finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
     }
 
+    let dateVal = null;
+    if (row['Date']) {
+      dateVal = new Date(row['Date']);
+    }
+
     recordsToInsert.push({
       eventNo: Number(row['Event No']) || i + 1,
       rigName: String(row['Rig Name'] || 'Unknown'),
@@ -57,7 +62,11 @@ async function main() {
       timeSaved: finalTimeSaved,
       costUsdPerDay: costUSDPerDay,
       costImpact: costImpact,
-      costSaved: finalCostSaved
+      costSaved: finalCostSaved,
+      date: dateVal,
+      monitoringEngineer: row['Monitoring Engineer'] ? String(row['Monitoring Engineer']) : null,
+      inchargeName: row['Incharge Name'] ? String(row['Incharge Name']) : null,
+      interventionMapped: row['Intervention_Mapped'] ? String(row['Intervention_Mapped']) : null
     });
   }
 

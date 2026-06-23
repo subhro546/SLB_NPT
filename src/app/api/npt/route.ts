@@ -25,7 +25,11 @@ export async function GET() {
       TimeSaved: r.timeSaved,
       CostUSDPerDay: r.costUsdPerDay,
       CostImpact: r.costImpact,
-      CostSaved: r.costSaved
+      CostSaved: r.costSaved,
+      Date: r.date ? r.date.toISOString() : undefined,
+      MonitoringEngineer: r.monitoringEngineer || undefined,
+      InchargeName: r.inchargeName || undefined,
+      InterventionMapped: r.interventionMapped || undefined
     }))
 
     return NextResponse.json({

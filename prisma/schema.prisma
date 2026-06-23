@@ -28,4 +28,8 @@ model NPTRecord {
   costUsdPerDay    Float
   costImpact       Float
   costSaved        Float
+  date             DateTime?
+  monitoringEngineer String?
+  inchargeName     String?
+  interventionMapped String?
 }

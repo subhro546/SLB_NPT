@@ -42,6 +42,7 @@ export default function UploadPage() {
         const records: NPTRecord[] = validJson.map((row: any, index) => {
           const hours = Number(row['Hours']) || 0;
           const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
+          const costImpact = hours * (costUSDPerDay / 24);
 
           const rawCategory = String(row['Category'] || 'Unknown');
           const normalizedCat = normalizeCategory(rawCategory);
@@ -62,6 +63,11 @@ export default function UploadPage() {
             recordsMerged++;
           }
 
+          let dateVal = undefined;
+          if (row['Date']) {
+            dateVal = new Date(row['Date']).toISOString();
+          }
+
           return {
             EventNo: Number(row['Event No']) || index + 1,
             RigName: String(row['Rig Name'] || 'Unknown'),
@@ -75,8 +81,12 @@ export default function UploadPage() {
             Hours: hours,
             TimeSaved: finalTimeSaved,
             CostUSDPerDay: costUSDPerDay,
-            CostImpact: hours * (costUSDPerDay / 24),
-            CostSaved: finalCostSaved
+            CostImpact: costImpact,
+            CostSaved: finalCostSaved,
+            Date: dateVal,
+            MonitoringEngineer: row['Monitoring Engineer'] ? String(row['Monitoring Engineer']) : undefined,
+            InchargeName: row['Incharge Name'] ? String(row['Incharge Name']) : undefined,
+            InterventionMapped: row['Intervention_Mapped'] ? String(row['Intervention_Mapped']) : undefined
           }
         })
 

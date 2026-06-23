@@ -16,6 +16,10 @@ export interface NPTRecord {
   Hours: number;
   TimeSaved: number;
   CostUSDPerDay: number;
+  Date?: string;
+  MonitoringEngineer?: string;
+  InchargeName?: string;
+  InterventionMapped?: string;
   // Derived
   CostImpact: number;
   CostSaved: number;
