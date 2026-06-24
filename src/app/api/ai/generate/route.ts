@@ -5,8 +5,11 @@ const hf = new HfInference(process.env.HF_TOKEN);
 const MODEL = 'Qwen/Qwen2.5-7B-Instruct';
 
 export async function POST(req: Request) {
+  let analyticsData: any = null;
   try {
-    const { analyticsData, userQuery } = await req.json();
+    const body = await req.json();
+    analyticsData = body.analyticsData;
+    const userQuery = body.userQuery;
 
     if (!userQuery) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
@@ -15,6 +18,10 @@ export async function POST(req: Request) {
     if (!analyticsData) {
       return NextResponse.json({ summary: "I don't have any dashboard data to analyze right now." });
     }
+
+    console.log('\n=== AI COPILOT DEBUG MODE: REQUEST ===');
+    console.log('User Query:', userQuery);
+    console.log('Dataset row count:', analyticsData.totalEvents);
 
     const universalPrompt = `You are a simple, highly reliable analytics copilot for a drilling operations dashboard.
 You have been provided with the user's query and the aggregated dashboard metrics.
@@ -55,7 +62,7 @@ Output MUST be strictly valid JSON matching this schema:
     const out = await hf.chatCompletion({
       model: MODEL,
       messages: [{ role: "user", content: universalPrompt }],
-      max_tokens: 800,
+      max_tokens: 1500,
       temperature: 0.1,
     });
 
@@ -71,9 +78,20 @@ Output MUST be strictly valid JSON matching this schema:
       } else {
         parsed = JSON.parse(rawResponse);
       }
-    } catch (e) {
+      
+      console.log('\n=== AI COPILOT DEBUG MODE: RESPONSE ===');
+      console.log('Generated Metric (yAxis):', parsed.chartConfig?.yAxisKey || 'N/A');
+      console.log('Generated Chart Type:', parsed.chartConfig?.chartType || 'N/A');
+      console.log('Final Chart Payload:', JSON.stringify(parsed.chartConfig, null, 2));
+      
+    } catch (e: any) {
       console.error("Failed to parse LLM JSON:", rawResponse);
-      return NextResponse.json({ summary: "I analyzed the data but had trouble formatting the response perfectly." });
+      console.error("Parse Exception:", e.message);
+      
+      // Return data table on parse failure
+      return NextResponse.json({ 
+        summary: "Chart Error: Failed to parse visualization data. Here is the raw data representation instead:\n\n" + JSON.stringify(analyticsData.aggregatedByCategory, null, 2)
+      });
     }
 
     return NextResponse.json({ 
@@ -81,8 +99,13 @@ Output MUST be strictly valid JSON matching this schema:
       chartConfig: parsed.chartConfig
     });
 
-  } catch (error) {
-    console.error('AI Generate Error:', error);
-    return NextResponse.json({ summary: "I encountered a brief connection issue, please try asking again!" });
+  } catch (error: any) {
+    console.error('\n=== AI COPILOT DEBUG MODE: ERROR ===');
+    console.error('Exact Exception Message:', error.message);
+    console.error('Stack:', error.stack);
+    
+    return NextResponse.json({ 
+      summary: `Chart Error: ${error.message}\n\nFalling back to raw data table:\n\n${JSON.stringify(analyticsData?.aggregatedByCategory || {}, null, 2)}`
+    });
   }
 }

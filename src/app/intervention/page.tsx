@@ -6,7 +6,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend, PieChart, Pie, Cell,
+  ScatterChart, Scatter, ZAxis, ComposedChart, LineChart, Line, Legend, PieChart, Pie, Cell,
   AreaChart, Area
 } from 'recharts'
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
@@ -153,7 +153,37 @@ export default function InterventionIntelligence() {
     .sort((a, b) => b.RecoveryRate - a.RecoveryRate) // Sort by HIGHEST recovery rate
     .slice(0, 10);
 
-  // 8. Nested Pie Data (Category -> Onshore/Offshore -> Well Type)
+  // NEW: Top Interventions by Incharge
+  const inchargeAgg = data.reduce((acc, curr) => {
+    const inc = (curr as any).InchargeName || 'Unknown';
+    if (!acc[inc]) acc[inc] = { name: inc, Interventions: 0, TimeSaved: 0 };
+    if (curr.TimeSaved > 0) acc[inc].Interventions += 1;
+    acc[inc].TimeSaved += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const inchargeData = Object.values(inchargeAgg).filter(d => d.name !== 'Unknown').sort((a, b) => b.Interventions - a.Interventions).slice(0, 10);
+
+  // NEW: Top Interventions by Engineer
+  const engineerAgg = data.reduce((acc, curr) => {
+    const eng = (curr as any).MonitoringEngineer || 'Unknown';
+    if (!acc[eng]) acc[eng] = { name: eng, Interventions: 0, TimeSaved: 0 };
+    if (curr.TimeSaved > 0) acc[eng].Interventions += 1;
+    acc[eng].TimeSaved += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const engineerData = Object.values(engineerAgg).filter(d => d.name !== 'Unknown').sort((a, b) => b.Interventions - a.Interventions).slice(0, 10);
+
+  // NEW: Monthly Interventions
+  const monthlyAgg = data.reduce((acc, curr) => {
+    const m = (curr as any).Month || 'Unknown';
+    if (!acc[m]) acc[m] = { name: m, Interventions: 0, TimeSaved: 0 };
+    if (curr.TimeSaved > 0) acc[m].Interventions += 1;
+    acc[m].TimeSaved += curr.TimeSaved;
+    return acc;
+  }, {} as Record<string, any>);
+  const monthlyData = Object.values(monthlyAgg).filter(d => d.name !== 'Unknown');
+
+  // 8. Nested Pie Data (Category -> Onshore/Offshore)
   const catAggPie = data.reduce((acc, curr) => {
     const cat = formatActionableCategory(curr.Category);
     if (!acc[cat]) acc[cat] = { name: cat, value: 0 };
@@ -174,31 +204,6 @@ export default function InterventionIntelligence() {
   }, {} as Record<string, any>);
   const pieMiddleData = Object.values(envAggPie).filter(d => d.value > 0).sort((a, b) => {
     if (a.cat === b.cat) return b.value - a.value;
-    const catA = pieInnerData.findIndex(c => c.name === a.cat);
-    const catB = pieInnerData.findIndex(c => c.name === b.cat);
-    return catA - catB;
-  });
-
-  const wellCatAggPie = data.reduce((acc, curr) => {
-    const cat = formatActionableCategory(curr.Category);
-    // Only include top 5 categories
-    if (!pieInnerData.find(d => d.name === cat)) return acc;
-
-    const env = curr.OnshoreOffshore || 'Unknown';
-    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
-    const wt = curr.WellCategory === 'D' ? 'Development' : 'Exploratory';
-    const key = `${cat}-${env}-${wt}`;
-    if (!acc[key]) acc[key] = { name: wt, cat, env, value: 0 };
-    acc[key].value += curr.TimeSaved;
-    return acc;
-  }, {} as Record<string, any>);
-  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => {
-    if (a.cat === b.cat) {
-      if (a.env === b.env) return b.value - a.value;
-      const envA = pieMiddleData.findIndex(c => c.name === a.env && c.cat === a.cat);
-      const envB = pieMiddleData.findIndex(c => c.name === b.env && c.cat === b.cat);
-      return envA - envB;
-    }
     const catA = pieInnerData.findIndex(c => c.name === a.cat);
     const catB = pieInnerData.findIndex(c => c.name === b.cat);
     return catA - catB;
@@ -434,38 +439,100 @@ export default function InterventionIntelligence() {
           </CardContent>
         </Card>
 
-        {/* REPLACED: 3-Ring Bubble Chart with Nested Pie Chart */}
+        {/* REPLACED: 2-Ring Nested Pie Chart */}
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
-            <CardDescription>Time saved by Categories (Inner), Onshore/Offshore (Middle), and Well Type (Outer).</CardDescription>
+            <CardDescription>Time saved by Categories (Inner) and Onshore/Offshore (Outer).</CardDescription>
           </CardHeader>
-          <CardContent className="h-[500px]">
+          <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
-                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={70}>
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={70} labelLine={false} label={({ name }) => name}>
                   {pieInnerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={110}>
+                <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={110} labelLine={false} label={({ name }) => name}>
                   {pieMiddleData.map((entry, index) => {
-                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
-                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.8} />
-                  })}
-                </Pie>
-                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={120} outerRadius={150}>
-                  {pieOuterData.map((entry, index) => {
-                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
-                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.6} />
+                    const distinctColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6'];
+                    return <Cell key={`cell-${index}`} fill={distinctColors[index % distinctColors.length]} fillOpacity={0.9} />
                   })}
                 </Pie>
               </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Top Interventions by Incharge */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Interventions by Incharge</CardTitle>
+            <CardDescription>Incharges leading successful interventions.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={inchargeData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                <XAxis type="number" tickFormatter={(v) => `${v}`} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}`, 'Interventions']}
+                  cursor={{fill: 'var(--color-muted)'}}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="Interventions" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Top Interventions by Engineers */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Interventions by Engineers</CardTitle>
+            <CardDescription>Engineers generating highest intervention counts.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={engineerData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                <XAxis type="number" tickFormatter={(v) => `${v}`} tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" interval={0} width={100} tick={{ fontSize: 11 }} />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}`, 'Interventions']}
+                  cursor={{fill: 'var(--color-muted)'}}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Bar isAnimationActive={false} dataKey="Interventions" fill="var(--color-chart-2)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Monthly Interventions */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Monthly Interventions Trend</CardTitle>
+            <CardDescription>Time series of successful interventions executed.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value: any) => [`${value}`, 'Interventions']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Line isAnimationActive={false} type="monotone" dataKey="Interventions" stroke="var(--color-emerald-500)" strokeWidth={3} dot={{ r: 4 }} />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
