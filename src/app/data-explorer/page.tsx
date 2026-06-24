@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function DataExplorer() {
   const data = useFilteredData()
@@ -47,8 +48,11 @@ export default function DataExplorer() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState("")
+  const [showInterventionsOnly, setShowInterventionsOnly] = useState(false)
 
-  const columns: ColumnDef<NPTRecord>[] = [
+  const displayData = showInterventionsOnly ? data.filter(d => d.TimeSaved > 0) : data
+
+  const baseColumns: ColumnDef<NPTRecord>[] = [
     { accessorKey: "EventNo", header: "Event No" },
     { accessorKey: "RigName", header: "Rig Name" },
     { accessorKey: "WellID", header: "Well ID" },
@@ -97,8 +101,15 @@ export default function DataExplorer() {
     },
   ]
 
+  const columns: ColumnDef<NPTRecord>[] = showInterventionsOnly ? [
+    ...baseColumns,
+    { accessorKey: "InchargeName", header: "Incharge" },
+    { accessorKey: "MonitoringEngineer", header: "Engineer" },
+    { accessorKey: "Month", header: "Date" },
+  ] : baseColumns
+
   const table = useReactTable({
-    data,
+    data: displayData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -132,14 +143,14 @@ export default function DataExplorer() {
   }
 
   const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data)
+    const ws = XLSX.utils.json_to_sheet(displayData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "NPT_Data")
     XLSX.writeFile(wb, "NPT_Export.xlsx")
   }
 
   const exportCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(data)
+    const ws = XLSX.utils.json_to_sheet(displayData)
     const csv = XLSX.utils.sheet_to_csv(ws)
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
@@ -163,14 +174,29 @@ export default function DataExplorer() {
 
       <div className="bg-card border rounded-lg flex flex-col flex-1 overflow-hidden shadow-sm">
         <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-1 max-w-sm">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search all columns..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(String(event.target.value))}
-              className="max-w-sm"
-            />
+          <div className="flex items-center gap-6 flex-1">
+            <div className="flex items-center gap-2 max-w-sm flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search all columns..."
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(String(event.target.value))}
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="interventions-only" 
+                checked={showInterventionsOnly} 
+                onCheckedChange={(checked) => setShowInterventionsOnly(checked as boolean)} 
+              />
+              <label 
+                htmlFor="interventions-only" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Show Interventions Only
+              </label>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -238,7 +264,7 @@ export default function DataExplorer() {
 
         <div className="border-t p-4 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{table.getRowModel().rows.length}</span> of <span className="font-medium text-foreground">{data.length}</span> results
+            Showing <span className="font-medium text-foreground">{table.getRowModel().rows.length}</span> of <span className="font-medium text-foreground">{displayData.length}</span> results
           </div>
           <div className="flex items-center gap-2">
             <Button
