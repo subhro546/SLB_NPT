@@ -38,7 +38,11 @@ export default function ExecutiveCommandCenter() {
   const totalTimeSaved = data.reduce((acc, curr) => acc + curr.TimeSaved, 0)
   const totalCostImpact = data.reduce((acc, curr) => acc + curr.CostImpact, 0)
   const totalEstimatedSavings = data.reduce((acc, curr) => acc + curr.CostSaved, 0)
-  const avgTimeSaved = totalEvents > 0 ? totalTimeSaved / totalEvents : 0
+  
+  const totalInterventions = data.filter(d => d.TimeSaved > 0).length
+  const toolFailureEvents = data.filter(d => (d.Category || '').toLowerCase().includes('tool failure')).length
+  const denominator = totalEvents - toolFailureEvents
+  const interventionMetric = denominator > 0 ? (totalInterventions / denominator) * 100 : 0
 
   // 1 & 2. Time Saved and Cost Impact by Category
   const categoryAgg = data.reduce((acc, curr) => {
@@ -172,11 +176,11 @@ export default function ExecutiveCommandCenter() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Avg Time Saved / Event</CardTitle>
+            <CardTitle className="text-xs font-medium">Intervention Metric</CardTitle>
             <Target className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-blue-500">{avgTimeSaved.toFixed(1)}h</div>
+            <div className="text-xl font-bold text-blue-500">{interventionMetric.toFixed(1)}%</div>
           </CardContent>
         </Card>
       </div>
