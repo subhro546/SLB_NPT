@@ -85,8 +85,8 @@ export function Topbar() {
               <SelectValue placeholder="Savings Method" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="method1">Method 1 (DB)</SelectItem>
-              <SelectItem value="method2">Method 2 (3 Days)</SelectItem>
+              <SelectItem value="method1">Data driven</SelectItem>
+              <SelectItem value="method2">client method</SelectItem>
             </SelectContent>
           </Select>
         </div>
