@@ -181,7 +181,9 @@ export default function InterventionIntelligence() {
     acc[m].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const monthlyData = Object.values(monthlyAgg).filter(d => d.name !== 'Unknown');
+  const monthlyData = Object.values(monthlyAgg)
+    .filter(d => d.name !== 'Unknown')
+    .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
 
   // 8. Nested Pie Data (Category -> Onshore/Offshore)
   const catAggPie = data.reduce((acc, curr) => {
@@ -522,7 +524,7 @@ export default function InterventionIntelligence() {
           </CardHeader>
           <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+              <AreaChart data={monthlyData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -530,9 +532,8 @@ export default function InterventionIntelligence() {
                   formatter={(value: any) => [`${value}`, 'Interventions']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Line isAnimationActive={false} type="monotone" dataKey="Interventions" stroke="var(--color-emerald-500)" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
+                <Area isAnimationActive={false} type="monotone" dataKey="Interventions" fill="var(--color-emerald-500)" stroke="var(--color-emerald-500)" fillOpacity={0.3} />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
