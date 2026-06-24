@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { useAppStore, NPTRecord } from "@/store/useAppStore"
@@ -50,63 +50,67 @@ export default function DataExplorer() {
   const [globalFilter, setGlobalFilter] = useState("")
   const [showInterventionsOnly, setShowInterventionsOnly] = useState(false)
 
-  const displayData = showInterventionsOnly ? data.filter(d => d.TimeSaved > 0) : data
+  const displayData = useMemo(() => {
+    return showInterventionsOnly ? data.filter(d => d.TimeSaved > 0) : data
+  }, [data, showInterventionsOnly])
 
-  const baseColumns: ColumnDef<NPTRecord>[] = [
-    { accessorKey: "EventNo", header: "Event No" },
-    { accessorKey: "RigName", header: "Rig Name" },
-    { accessorKey: "WellID", header: "Well ID" },
-    { accessorKey: "WellCategory", header: "Well Type" },
-    { accessorKey: "CompanyCode", header: "Company" },
-    { accessorKey: "CDE", header: "CDE" },
-    { 
-      accessorKey: "Depth", 
-      header: "Depth",
-      cell: ({ row }) => `${row.getValue("Depth")}m`
-    },
-    { accessorKey: "OnshoreOffshore", header: "Environment" },
-    { 
-      accessorKey: "Category", 
-      header: "Category",
-      cell: ({ row }) => (
-        <span className="flex items-center gap-2">
-          {row.getValue("Category") as string}
-        </span>
-      )
-    },
-    { 
-      accessorKey: "Hours", 
-      header: "Hours Lost",
-      cell: ({ row }) => `${Number(row.getValue("Hours")).toFixed(1)}h`
-    },
-    { 
-      accessorKey: "TimeSaved", 
-      header: "Time Saved",
-      cell: ({ row }) => `${Number(row.getValue("TimeSaved")).toFixed(1)}h`
-    },
-    { 
-      accessorKey: "CostUSDPerDay", 
-      header: "Daily Rig Rate",
-      cell: ({ row }) => <span className="font-medium">{formatCurrency(row.getValue("CostUSDPerDay"))}</span>
-    },
-    { 
-      accessorKey: "CostImpact", 
-      header: "Cost Impact",
-      cell: ({ row }) => <span className="text-destructive font-medium">{formatCurrency(row.getValue("CostImpact"))}</span>
-    },
-    { 
-      accessorKey: "CostSaved", 
-      header: "Cost Saved",
-      cell: ({ row }) => <span className="text-emerald-600 font-medium">{formatCurrency(row.getValue("CostSaved"))}</span>
-    },
-  ]
+  const columns = useMemo<ColumnDef<NPTRecord>[]>(() => {
+    const baseColumns: ColumnDef<NPTRecord>[] = [
+      { accessorKey: "EventNo", header: "Event No" },
+      { accessorKey: "RigName", header: "Rig Name" },
+      { accessorKey: "WellID", header: "Well ID" },
+      { accessorKey: "WellCategory", header: "Well Type" },
+      { accessorKey: "CompanyCode", header: "Company" },
+      { accessorKey: "CDE", header: "CDE" },
+      { 
+        accessorKey: "Depth", 
+        header: "Depth",
+        cell: ({ row }) => `${row.getValue("Depth")}m`
+      },
+      { accessorKey: "OnshoreOffshore", header: "Environment" },
+      { 
+        accessorKey: "Category", 
+        header: "Category",
+        cell: ({ row }) => (
+          <span className="flex items-center gap-2">
+            {row.getValue("Category") as string}
+          </span>
+        )
+      },
+      { 
+        accessorKey: "Hours", 
+        header: "Hours Lost",
+        cell: ({ row }) => `${Number(row.getValue("Hours")).toFixed(1)}h`
+      },
+      { 
+        accessorKey: "TimeSaved", 
+        header: "Time Saved",
+        cell: ({ row }) => `${Number(row.getValue("TimeSaved")).toFixed(1)}h`
+      },
+      { 
+        accessorKey: "CostUSDPerDay", 
+        header: "Daily Rig Rate",
+        cell: ({ row }) => <span className="font-medium">{formatCurrency(row.getValue("CostUSDPerDay"))}</span>
+      },
+      { 
+        accessorKey: "CostImpact", 
+        header: "Cost Impact",
+        cell: ({ row }) => <span className="text-destructive font-medium">{formatCurrency(row.getValue("CostImpact"))}</span>
+      },
+      { 
+        accessorKey: "CostSaved", 
+        header: "Cost Saved",
+        cell: ({ row }) => <span className="text-emerald-600 font-medium">{formatCurrency(row.getValue("CostSaved"))}</span>
+      },
+    ]
 
-  const columns: ColumnDef<NPTRecord>[] = showInterventionsOnly ? [
-    ...baseColumns,
-    { accessorKey: "InchargeName", header: "Incharge" },
-    { accessorKey: "MonitoringEngineer", header: "Engineer" },
-    { accessorKey: "Month", header: "Date" },
-  ] : baseColumns
+    return showInterventionsOnly ? [
+      ...baseColumns,
+      { accessorKey: "InchargeName", header: "Incharge" },
+      { accessorKey: "MonitoringEngineer", header: "Engineer" },
+      { accessorKey: "Month", header: "Date" },
+    ] : baseColumns
+  }, [showInterventionsOnly, formatCurrency])
 
   const table = useReactTable({
     data: displayData,

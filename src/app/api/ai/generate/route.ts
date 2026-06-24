@@ -88,9 +88,9 @@ Output MUST be strictly valid JSON matching this schema:
       console.error("Failed to parse LLM JSON:", rawResponse);
       console.error("Parse Exception:", e.message);
       
-      // Return data table on parse failure
+      // If the AI just returned text, return it as the summary
       return NextResponse.json({ 
-        summary: "Chart Error: Failed to parse visualization data. Here is the raw data representation instead:\n\n" + JSON.stringify(analyticsData.aggregatedByCategory, null, 2)
+        summary: rawResponse || "I encountered an error understanding the data format."
       });
     }
 
