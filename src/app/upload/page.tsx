@@ -62,6 +62,17 @@ export default function UploadPage() {
             recordsMerged++;
           }
 
+          // Date extraction to Month
+          let monthStr = 'Unknown';
+          if (row['Date']) {
+            const dateObj = new Date(row['Date']);
+            if (!isNaN(dateObj.getTime())) {
+              monthStr = format(dateObj, 'MMM yyyy'); // e.g. "Jan 2024"
+            } else if (typeof row['Date'] === 'string') {
+              monthStr = row['Date'].substring(0, 7); // Fallback for raw string
+            }
+          }
+
           return {
             EventNo: Number(row['Event No']) || index + 1,
             RigName: String(row['Rig Name'] || 'Unknown'),
@@ -76,7 +87,10 @@ export default function UploadPage() {
             TimeSaved: finalTimeSaved,
             CostUSDPerDay: costUSDPerDay,
             CostImpact: hours * (costUSDPerDay / 24),
-            CostSaved: finalCostSaved
+            CostSaved: finalCostSaved,
+            InchargeName: String(row['Incharge Name'] || 'Unknown'),
+            MonitoringEngineer: String(row['Monitoring Engineer'] || 'Unknown'),
+            Month: monthStr
           }
         })
 

@@ -19,6 +19,10 @@ export interface NPTRecord {
   // Derived
   CostImpact: number;
   CostSaved: number;
+  // Extended fields for AI / Dashboard
+  InchargeName?: string;
+  MonitoringEngineer?: string;
+  Month?: string;
 }
 
 export interface DataQualityMetrics {
