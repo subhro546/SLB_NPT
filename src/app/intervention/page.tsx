@@ -4,7 +4,7 @@ import { useFilteredData } from "@/hooks/useFilteredData"
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter"
 import { useAppStore } from "@/store/useAppStore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, ZAxis, ComposedChart, Line, Legend, PieChart, Pie, Cell,
   AreaChart, Area
@@ -12,22 +12,7 @@ import {
 import { FileSpreadsheet, Trophy, Target, TrendingUp, Lightbulb } from "lucide-react"
 import { formatActionableCategory } from "@/lib/constants"
 
-const INNER_COLORS = ['#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a', '#172554'];
-const MIDDLE_COLORS = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
-const OUTER_COLORS = ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f'];
-
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
-  if (percent < 0.05) return null;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-
-  return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="10px" className="font-medium drop-shadow-md">
-      {name}
-    </text>
-  );
-};
+const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-destructive)'];
 
 export default function InterventionIntelligence() {
   const data = useFilteredData()
@@ -84,7 +69,7 @@ export default function InterventionIntelligence() {
     acc[curr.Category].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  
+
   const efficiencyData = Object.values(effAgg)
     .sort((a, b) => b.Hours - a.Hours) // Sort by most hours lost to see the biggest impact areas
     .slice(0, 10);
@@ -180,7 +165,7 @@ export default function InterventionIntelligence() {
   const envAggPie = data.reduce((acc, curr) => {
     const cat = formatActionableCategory(curr.Category);
     if (!pieInnerData.find(d => d.name === cat)) return acc;
-    
+
     const env = curr.OnshoreOffshore || 'Unknown';
     const key = `${cat}-${env}`;
     if (!acc[key]) acc[key] = { name: env, cat, value: 0 };
@@ -194,41 +179,30 @@ export default function InterventionIntelligence() {
     return catA - catB;
   });
 
+  const wellCatAggPie = data.reduce((acc, curr) => {
+    const cat = formatActionableCategory(curr.Category);
+    // Only include top 5 categories
+    if (!pieInnerData.find(d => d.name === cat)) return acc;
 
-
-  // 9. Time Series of Interventions
-  const tsAgg = data.reduce((acc, curr) => {
-    if (!curr.Date) return acc;
-    const d = new Date(curr.Date);
-    const monthYear = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    if (!acc[monthYear]) acc[monthYear] = { name: monthYear, Events: 0, TimeSaved: 0 };
-    acc[monthYear].Events += 1;
-    acc[monthYear].TimeSaved += curr.TimeSaved;
+    const env = curr.OnshoreOffshore || 'Unknown';
+    if (curr.WellCategory !== 'D' && curr.WellCategory !== 'E') return acc;
+    const wt = curr.WellCategory === 'D' ? 'Development' : 'Exploratory';
+    const key = `${cat}-${env}-${wt}`;
+    if (!acc[key]) acc[key] = { name: wt, cat, env, value: 0 };
+    acc[key].value += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const tsData = Object.values(tsAgg).sort((a, b) => a.name.localeCompare(b.name));
-
-  // 10. Interventions by Incharge
-  const inchargeAgg = data.reduce((acc, curr) => {
-    if (!curr.InchargeName) return acc;
-    const name = curr.InchargeName;
-    if (!acc[name]) acc[name] = { name, Events: 0, TimeSaved: 0 };
-    acc[name].Events += 1;
-    acc[name].TimeSaved += curr.TimeSaved;
-    return acc;
-  }, {} as Record<string, any>);
-  const inchargeData = Object.values(inchargeAgg).sort((a, b) => b.TimeSaved - a.TimeSaved).slice(0, 10);
-
-  // 11. Alerts by Monitoring Engineer
-  const engineerAgg = data.reduce((acc, curr) => {
-    if (!curr.MonitoringEngineer) return acc;
-    const name = curr.MonitoringEngineer;
-    if (!acc[name]) acc[name] = { name, Events: 0, TimeSaved: 0 };
-    acc[name].Events += 1;
-    acc[name].TimeSaved += curr.TimeSaved;
-    return acc;
-  }, {} as Record<string, any>);
-  const engineerData = Object.values(engineerAgg).sort((a, b) => b.Events - a.Events).slice(0, 10);
+  const pieOuterData = Object.values(wellCatAggPie).filter(d => d.value > 0).sort((a, b) => {
+    if (a.cat === b.cat) {
+      if (a.env === b.env) return b.value - a.value;
+      const envA = pieMiddleData.findIndex(c => c.name === a.env && c.cat === a.cat);
+      const envB = pieMiddleData.findIndex(c => c.name === b.env && c.cat === b.cat);
+      return envA - envB;
+    }
+    const catA = pieInnerData.findIndex(c => c.name === a.cat);
+    const catB = pieInnerData.findIndex(c => c.name === b.cat);
+    return catA - catB;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -313,7 +287,7 @@ export default function InterventionIntelligence() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -337,7 +311,7 @@ export default function InterventionIntelligence() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} tickFormatter={formatActionableCategory} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -371,7 +345,7 @@ export default function InterventionIntelligence() {
                     <Cell key={`cell-${index}`} fill={`var(--color-chart-${(index % 5) + 1})`} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -394,7 +368,7 @@ export default function InterventionIntelligence() {
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any, name: any) => [formatCurrency(Number(value)), name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -418,7 +392,7 @@ export default function InterventionIntelligence() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any) => [`${value} Events`, 'Frequency']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -450,7 +424,7 @@ export default function InterventionIntelligence() {
                     <Cell key={`cell-${index}`} fill={`var(--color-chart-${(index % 5) + 1})`} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, formatActionableCategory(name)]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -461,97 +435,37 @@ export default function InterventionIntelligence() {
         </Card>
 
         {/* REPLACED: 3-Ring Bubble Chart with Nested Pie Chart */}
-        <Card>
+        <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle>Hierarchical Savings (Nested Pie)</CardTitle>
-            <CardDescription>Time saved by Categories (Inner) and Onshore/Offshore (Outer).</CardDescription>
+            <CardDescription>Time saved by Categories (Inner), Onshore/Offshore (Middle), and Well Type (Outer).</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any, name: any) => [`${Number(value).toFixed(1)} hrs`, name]}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
-                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={70} label={renderCustomizedLabel} labelLine={false}>
+                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
+                <Pie data={pieInnerData} dataKey="value" cx="50%" cy="50%" outerRadius={70}>
                   {pieInnerData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={INNER_COLORS[index % INNER_COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={120} label={renderCustomizedLabel} labelLine={false}>
+                <Pie data={pieMiddleData} dataKey="value" cx="50%" cy="50%" innerRadius={80} outerRadius={110}>
                   {pieMiddleData.map((entry, index) => {
-                    return <Cell key={`cell-${index}`} fill={MIDDLE_COLORS[index % MIDDLE_COLORS.length]} fillOpacity={0.9} />
+                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
+                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.8} />
+                  })}
+                </Pie>
+                <Pie data={pieOuterData} dataKey="value" cx="50%" cy="50%" innerRadius={120} outerRadius={150}>
+                  {pieOuterData.map((entry, index) => {
+                    const catIndex = pieInnerData.findIndex(c => c.name === entry.cat);
+                    return <Cell key={`cell-${index}`} fill={COLORS[catIndex % COLORS.length]} fillOpacity={0.6} />
                   })}
                 </Pie>
               </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* NEW: Time Series of Interventions */}
-        <Card className="col-span-1 lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Time Series of Interventions</CardTitle>
-            <CardDescription>Monthly trend of Time Saved and Total Events over time.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={tsData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}h`} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Area yAxisId="left" type="monotone" dataKey="TimeSaved" fill="var(--color-primary)" stroke="var(--color-primary)" name="Time Saved (Hrs)" opacity={0.3} />
-                <Line yAxisId="right" type="monotone" dataKey="Events" stroke="var(--color-destructive)" strokeWidth={3} name="Number of Events" dot={{ r: 4 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* NEW: Interventions by Incharge */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Incharges by Time Saved</CardTitle>
-            <CardDescription>Individuals driving the most time saved via successful interventions.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={inchargeData} layout="vertical" margin={{ top: 20, right: 20, bottom: 20, left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
-                <Tooltip 
-                  formatter={(value: any) => [`${Number(value).toFixed(1)} hrs`, 'Time Saved']}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="TimeSaved" fill="var(--color-emerald-500)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* NEW: Alerts by Monitoring Engineer */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Alerts by Monitoring Engineer</CardTitle>
-            <CardDescription>Engineers generating the highest number of intervention alerts.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={engineerData} layout="vertical" margin={{ top: 20, right: 20, bottom: 20, left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
-                <Tooltip 
-                  formatter={(value: any) => [`${value} Alerts`, 'Alerts']}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
-                />
-                <Bar isAnimationActive={false} dataKey="Events" fill="var(--color-blue-600)" radius={[0, 4, 4, 0]} />
-              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -568,7 +482,7 @@ export default function InterventionIntelligence() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any) => [`${value}%`, 'Recovery Rate']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />
@@ -590,7 +504,7 @@ export default function InterventionIntelligence() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: any) => [`${value}%`, 'Recovery Rate']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                 />

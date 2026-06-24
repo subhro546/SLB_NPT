@@ -86,7 +86,7 @@ export function estimateAnnualSavings(records: NPTRecord[]) {
   };
 }
 
-export function prepareVisualizationContext(records: NPTRecord[]) {
+export function prepareUniversalContext(records: NPTRecord[]) {
   // Aggregate data by Category
   const byCategory = records.reduce((acc, curr) => {
     const cat = isActionableCategory(curr.Category) ? curr.Category : 'Other';
@@ -147,11 +147,40 @@ export function prepareVisualizationContext(records: NPTRecord[]) {
     return acc;
   }, {} as Record<string, any>);
 
+  // Aggregate data by Engineer
+  const byEngineer = records.reduce((acc, curr) => {
+    const eng = (curr as any).MonitoringEngineer || 'Unknown';
+    if (!acc[eng]) acc[eng] = { Engineer: eng, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[eng].Events += 1;
+    acc[eng].NPTHours += curr.Hours;
+    acc[eng].TimeSaved += curr.TimeSaved;
+    acc[eng].CostImpact += curr.CostImpact;
+    acc[eng].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Aggregate data by Incharge
+  const byIncharge = records.reduce((acc, curr) => {
+    const inc = (curr as any).InchargeName || 'Unknown';
+    if (!acc[inc]) acc[inc] = { Incharge: inc, Events: 0, NPTHours: 0, TimeSaved: 0, CostImpact: 0, CostSaved: 0 };
+    acc[inc].Events += 1;
+    acc[inc].NPTHours += curr.Hours;
+    acc[inc].TimeSaved += curr.TimeSaved;
+    acc[inc].CostImpact += curr.CostImpact;
+    acc[inc].CostSaved += curr.CostSaved;
+    return acc;
+  }, {} as Record<string, any>);
+
   return {
+    totalEvents: records.length,
+    totalTimeSaved: records.reduce((sum, r) => sum + r.TimeSaved, 0),
+    totalCostSaved: records.reduce((sum, r) => sum + r.CostSaved, 0),
     aggregatedByCategory: Object.values(byCategory),
     aggregatedByRig: Object.values(byRig),
     aggregatedByWellType: Object.values(byWellType),
     aggregatedByEnvironment: Object.values(byEnvironment),
-    aggregatedByCompanyCode: Object.values(byCompany)
+    aggregatedByCompanyCode: Object.values(byCompany),
+    aggregatedByEngineer: Object.values(byEngineer),
+    aggregatedByIncharge: Object.values(byIncharge)
   };
 }

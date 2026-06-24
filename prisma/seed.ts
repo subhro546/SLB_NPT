@@ -8,15 +8,15 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Clearing existing records...');
   await prisma.nPTRecord.deleteMany({});
-  
+
   console.log('Seeding database from Excel file...');
-  
+
   const filePath = path.resolve('/Users/subhro/RTDMMA/Intervention_Dataset_Interventions_Only_Dates.xlsx')
-  const workbook = XLSX.readFile(filePath, { cellDates: true })
+  const workbook = XLSX.readFile(filePath)
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
   const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
-  
+
   const validData = rawData.filter(row => row['Event No'] || row['WellID'] || row['Rig Name'])
 
   console.log(`Found ${rawData.length} raw records. Filtered down to ${validData.length} valid records.`)
@@ -32,7 +32,7 @@ async function main() {
     const normalizedCat = normalizeCategory(rawCategory);
 
     const costImpact = hours * (costUSDPerDay / 24);
-    
+
     let finalTimeSaved = Number(row['Time Saved']) || 0;
     let finalCostSaved = Number(row['Cost Saved']) || 0;
 
@@ -41,11 +41,6 @@ async function main() {
       finalCostSaved = 0;
     } else if (finalCostSaved === 0 && finalTimeSaved > 0) {
       finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
-    }
-
-    let dateVal = null;
-    if (row['Date']) {
-      dateVal = new Date(row['Date']);
     }
 
     recordsToInsert.push({
@@ -62,11 +57,7 @@ async function main() {
       timeSaved: finalTimeSaved,
       costUsdPerDay: costUSDPerDay,
       costImpact: costImpact,
-      costSaved: finalCostSaved,
-      date: dateVal,
-      monitoringEngineer: row['Monitoring Engineer'] ? String(row['Monitoring Engineer']) : null,
-      inchargeName: row['Incharge Name'] ? String(row['Incharge Name']) : null,
-      interventionMapped: row['Intervention_Mapped'] ? String(row['Intervention_Mapped']) : null
+      costSaved: finalCostSaved
     });
   }
 

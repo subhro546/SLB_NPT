@@ -16,10 +16,6 @@ export interface NPTRecord {
   Hours: number;
   TimeSaved: number;
   CostUSDPerDay: number;
-  Date?: string;
-  MonitoringEngineer?: string;
-  InchargeName?: string;
-  InterventionMapped?: string;
   // Derived
   CostImpact: number;
   CostSaved: number;
@@ -52,18 +48,18 @@ interface AppState {
   setCurrency: (c: Currency) => void;
   savingsMethod: 'method1' | 'method2';
   setSavingsMethod: (m: 'method1' | 'method2') => void;
-  
-  
+
+
   datasets: Dataset[];
   activeDatasetId: string | null;
   addDataset: (dataset: Dataset) => void;
   setActiveDataset: (id: string) => void;
   removeDataset: (id: string) => void;
-  
+
   globalFilters: GlobalFilters;
   setGlobalFilters: (filters: Partial<GlobalFilters>) => void;
   resetFilters: () => void;
-  
+
   fetchDatabaseRecords: () => Promise<void>;
   isLoadingDatabase: boolean;
 }
@@ -83,27 +79,27 @@ export const useAppStore = create<AppState>()(
       setCurrency: (c) => set({ currency: c }),
       savingsMethod: 'method1',
       setSavingsMethod: (m) => set({ savingsMethod: m }),
-      
+
       datasets: [],
       activeDatasetId: null,
-      addDataset: (dataset) => set((state) => ({ 
+      addDataset: (dataset) => set((state) => ({
         datasets: [...state.datasets, dataset],
-        activeDatasetId: dataset.id 
+        activeDatasetId: dataset.id
       })),
       setActiveDataset: (id) => set({ activeDatasetId: id }),
       removeDataset: (id) => set((state) => ({
         datasets: state.datasets.filter(d => d.id !== id),
-        activeDatasetId: state.activeDatasetId === id 
-          ? (state.datasets.find(d => d.id !== id)?.id || null) 
+        activeDatasetId: state.activeDatasetId === id
+          ? (state.datasets.find(d => d.id !== id)?.id || null)
           : state.activeDatasetId
       })),
-      
+
       globalFilters: initialFilters,
       setGlobalFilters: (filters) => set((state) => ({
         globalFilters: { ...state.globalFilters, ...filters }
       })),
       resetFilters: () => set({ globalFilters: initialFilters }),
-      
+
       isLoadingDatabase: false,
       fetchDatabaseRecords: async () => {
         set({ isLoadingDatabase: true });
@@ -117,7 +113,7 @@ export const useAppStore = create<AppState>()(
               uploadTimestamp: new Date().toISOString(),
               records: json.data,
             };
-            
+
             set((state) => {
               // Replace if it exists
               const existingIdx = state.datasets.findIndex(d => d.id === 'database-source');
@@ -127,10 +123,10 @@ export const useAppStore = create<AppState>()(
               } else {
                 newDatasets.push(dbDataset);
               }
-              
-              return { 
+
+              return {
                 datasets: newDatasets,
-                activeDatasetId: 'database-source' 
+                activeDatasetId: 'database-source'
               };
             });
           }

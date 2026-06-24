@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from "react"
 import { useFilteredData } from "@/hooks/useFilteredData"
 import { useAppStore } from "@/store/useAppStore"
-import { 
+import {
   summarizeCurrentView,
   interventionPerformance,
   savingsPotential,
   assetInterventionComparison,
   recommendIntervention,
   estimateAnnualSavings,
-  prepareVisualizationContext
+  prepareUniversalContext
 } from "@/lib/analytics-engine"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, B
 export default function AIDecisionIntelligence() {
   const data = useFilteredData()
   const { activeDatasetId } = useAppStore()
-  
+
   const [query, setQuery] = useState("")
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string, title?: string, chartConfig?: any }[]>([])
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
@@ -50,37 +50,16 @@ export default function AIDecisionIntelligence() {
     )
   }
 
-  const runAnalytics = (action: string, extraArgs?: any) => {
-    switch (action) {
-      case 'ranking': return interventionPerformance(data);
-      case 'data_analysis': return savingsPotential(data);
-      case 'comparison': return assetInterventionComparison(data);
-      case 'executive_insights': return recommendIntervention(data);
-      case 'trend_analysis': return estimateAnnualSavings(data);
-      case 'chart_generation': return prepareVisualizationContext(data);
-      case 'general_conversation':
-      case 'dashboard_help':
-      case 'greeting':
-        return null;
-      case 'summary_generation':
-      case 'executive_insights':
-      default:
-        return summarizeCurrentView(data);
-    }
-  }
-
-  const generateReport = async (action: string, userQuery: string, title: string) => {
+  const generateReport = async (userQuery: string, title: string) => {
     setIsProcessing(true)
-    
-    // Step 2: Analytics
-    const analyticsData = runAnalytics(action)
 
-    // Step 3: Executive Summary
+    const analyticsData = prepareUniversalContext(data)
+
     try {
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyticsData, userQuery, action, chatHistory })
+        body: JSON.stringify({ analyticsData, userQuery })
       })
       const { summary, chartConfig } = await res.json()
 
@@ -97,12 +76,12 @@ export default function AIDecisionIntelligence() {
         { role: 'ai', title: "Error", content: "Failed to connect to the Copilot Engine." }
       ])
     }
-    
+
     setIsProcessing(false)
   }
 
   const handleAction = (action: string, title: string) => {
-    generateReport(action, `Generate: ${title}`, title)
+    generateReport(`Generate: ${title}`, title)
   }
 
   const handleQuery = async (e?: React.FormEvent) => {
@@ -111,43 +90,9 @@ export default function AIDecisionIntelligence() {
 
     const currentQuery = query
     setQuery("")
-    setIsProcessing(true)
-
-    try {
-      // Step 1: Intent
-      const res = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: currentQuery, chatHistory })
-      })
-      const intent = await res.json()
-      const action = intent.intent || intent.action || 'executive_summary'
-      const title = action.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-      
-      // Step 2 & 3
-      const analyticsData = runAnalytics(action, intent)
-
-      const genRes = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyticsData, userQuery: currentQuery, action, chatHistory })
-      })
-      const { summary, chartConfig } = await genRes.json()
-
-      setChatHistory(prev => [
-        ...prev,
-        { role: 'user', content: currentQuery },
-        { role: 'ai', title: `${title} Insight`, content: summary, chartConfig }
-      ])
-    } catch (e) {
-      setChatHistory(prev => [
-        ...prev,
-        { role: 'user', content: currentQuery },
-        { role: 'ai', title: "Error", content: "Failed to process intent or connect to Hugging Face API." }
-      ])
-    }
-
-    setIsProcessing(false)
+    
+    // Fallback title for raw queries
+    generateReport(currentQuery, "Copilot Insight")
   }
 
   const handleSmartPrompt = (prompt: string) => {
@@ -165,7 +110,7 @@ export default function AIDecisionIntelligence() {
 
   const downloadText = (title: string, content: string) => {
     const element = document.createElement("a");
-    const file = new Blob([`${title}\n\n${content}`], {type: 'text/plain'});
+    const file = new Blob([`${title}\n\n${content}`], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `${title.replace(/\s+/g, '_').toLowerCase()}.txt`;
     document.body.appendChild(element);
@@ -203,7 +148,7 @@ export default function AIDecisionIntelligence() {
   const renderDynamicChart = (config: any) => {
     if (!config || !config.data || config.data.length === 0) return null;
     const { chartType, data, xAxisKey, yAxisKey } = config;
-    
+
     if (chartType === 'bar') {
       return (
         <div className="h-[300px] w-full mt-4 mb-4">
@@ -219,7 +164,7 @@ export default function AIDecisionIntelligence() {
         </div>
       );
     }
-    
+
     if (chartType === 'pie') {
       return (
         <div className="h-[300px] w-full mt-4 mb-4">
@@ -287,7 +232,7 @@ export default function AIDecisionIntelligence() {
             </ResponsiveContainer>
           </div>
           <div className="text-xs">
-            <p className="font-semibold flex items-center gap-1"><Database className="w-3 h-3"/> Active Context</p>
+            <p className="font-semibold flex items-center gap-1"><Database className="w-3 h-3" /> Active Context</p>
             <p className="text-muted-foreground">{data.length} Events Analyzed</p>
           </div>
         </div>
@@ -295,22 +240,22 @@ export default function AIDecisionIntelligence() {
 
       {/* Section 2: Analysis Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2 shrink-0">
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('ranking', 'Top Interventions')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('intervention_performance', 'Top Interventions')}>
           <span className="font-semibold text-xs text-blue-500">Top Interventions</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('data_analysis', 'Savings Potential')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('savings_potential', 'Savings Potential')}>
           <span className="font-semibold text-xs text-green-500">Savings Potential</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('comparison', 'Rig Comparison')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('rig_intervention_comparison', 'Rig Comparison')}>
           <span className="font-semibold text-xs text-purple-500">Rig Comparison</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('executive_insights', 'Recommended Action')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('recommend_intervention', 'Recommended Action')}>
           <span className="font-semibold text-xs text-amber-500">Recommended Action</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('trend_analysis', 'Annual Projections')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('estimate_annual_savings', 'Annual Projections')}>
           <span className="font-semibold text-xs text-indigo-500">Annual Projections</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summary_generation', 'View Summary')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summarize_current_view', 'View Summary')}>
           <span className="font-semibold text-xs text-rose-500">View Summary</span>
         </Button>
       </div>
@@ -324,7 +269,7 @@ export default function AIDecisionIntelligence() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
-          
+
           <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
             {chatHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground opacity-70 p-8">
@@ -342,11 +287,10 @@ export default function AIDecisionIntelligence() {
               <div className="space-y-6 pb-4">
                 {chatHistory.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-primary text-primary-foreground rounded-tr-sm' 
+                    <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-tr-sm'
                         : 'bg-card border rounded-tl-sm'
-                    }`}>
+                      }`}>
                       {msg.role === 'ai' && msg.title && (
                         <div className="flex items-center justify-between border-b pb-2 mb-3">
                           <span className="font-semibold text-foreground flex items-center gap-2">
@@ -370,19 +314,19 @@ export default function AIDecisionIntelligence() {
                     </div>
                   </div>
                 ))}
-                
+
                 {isProcessing && (
-                   <div className="flex justify-start">
-                     <div className="max-w-[85%] rounded-2xl p-4 shadow-sm bg-card border rounded-tl-sm flex items-center gap-3 text-muted-foreground">
-                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                       <span className="text-sm">Qwen 2.5 is analyzing...</span>
-                     </div>
-                   </div>
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl p-4 shadow-sm bg-card border rounded-tl-sm flex items-center gap-3 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm">Qwen 2.5 is analyzing...</span>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
           </div>
-          
+
           <div className="p-4 border-t bg-muted/10 shrink-0">
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3">
               {smartPrompts.map(p => (
@@ -392,8 +336,8 @@ export default function AIDecisionIntelligence() {
               ))}
             </div>
             <form onSubmit={handleQuery} className="flex gap-2">
-              <Input 
-                placeholder="Ask about intervention effectiveness or estimate annual savings..." 
+              <Input
+                placeholder="Ask about intervention effectiveness or estimate annual savings..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="flex-1 shadow-sm"

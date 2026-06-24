@@ -15,11 +15,11 @@ export default function UploadPage() {
   const { addDataset, datasets, activeDatasetId, setActiveDataset } = useAppStore()
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const processExcel = (file: File) => {
     setIsParsing(true)
     setError(null)
-    
+
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
@@ -28,12 +28,12 @@ export default function UploadPage() {
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const rawJson = XLSX.utils.sheet_to_json(worksheet)
-        
+
         // Filter out empty rows that Excel sometimes pads out to 1,048,576
         const validJson = rawJson.filter((row: any) => {
           return row['Event No'] || row['WellID'] || row['Rig Name'];
         });
-        
+
         const originalCats = new Set<string>();
         const normalizedCats = new Set<string>();
         let recordsMerged = 0;
@@ -42,11 +42,10 @@ export default function UploadPage() {
         const records: NPTRecord[] = validJson.map((row: any, index) => {
           const hours = Number(row['Hours']) || 0;
           const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
-          const costImpact = hours * (costUSDPerDay / 24);
 
           const rawCategory = String(row['Category'] || 'Unknown');
           const normalizedCat = normalizeCategory(rawCategory);
-          
+
           let finalTimeSaved = Number(row['Time Saved']) || 0;
           let finalCostSaved = Number(row['Cost Saved']) || 0;
 
@@ -56,16 +55,11 @@ export default function UploadPage() {
           } else if (finalCostSaved === 0 && finalTimeSaved > 0) {
             finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
           }
-          
+
           originalCats.add(rawCategory);
           normalizedCats.add(normalizedCat);
           if (rawCategory !== normalizedCat) {
             recordsMerged++;
-          }
-
-          let dateVal = undefined;
-          if (row['Date']) {
-            dateVal = new Date(row['Date']).toISOString();
           }
 
           return {
@@ -81,12 +75,8 @@ export default function UploadPage() {
             Hours: hours,
             TimeSaved: finalTimeSaved,
             CostUSDPerDay: costUSDPerDay,
-            CostImpact: costImpact,
-            CostSaved: finalCostSaved,
-            Date: dateVal,
-            MonitoringEngineer: row['Monitoring Engineer'] ? String(row['Monitoring Engineer']) : undefined,
-            InchargeName: row['Incharge Name'] ? String(row['Incharge Name']) : undefined,
-            InterventionMapped: row['Intervention_Mapped'] ? String(row['Intervention_Mapped']) : undefined
+            CostImpact: hours * (costUSDPerDay / 24),
+            CostSaved: finalCostSaved
           }
         })
 
@@ -113,12 +103,12 @@ export default function UploadPage() {
         setIsParsing(false)
       }
     }
-    
+
     reader.onerror = () => {
       setError("Failed to read the file")
       setIsParsing(false)
     }
-    
+
     reader.readAsBinaryString(file)
   }
 
@@ -154,8 +144,8 @@ export default function UploadPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div 
-                {...getRootProps()} 
+              <div
+                {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors
                   ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-accent/50'}`}
               >
@@ -221,7 +211,7 @@ export default function UploadPage() {
                         <span className="text-muted-foreground">Missing/Unknown Values</span>
                         <p className="font-medium">{missingValues.toLocaleString()}</p>
                       </div>
-                      
+
                       {/* Data Quality Metrics */}
                       <div className="space-y-1 pt-4 border-t col-span-2 md:col-span-3">
                         <h4 className="text-sm font-semibold mb-2">Normalization Results</h4>
@@ -267,8 +257,8 @@ export default function UploadPage() {
               ) : (
                 <div className="space-y-3">
                   {datasets.map((ds) => (
-                    <div 
-                      key={ds.id} 
+                    <div
+                      key={ds.id}
                       className={`p-3 rounded-md border text-sm transition-colors cursor-pointer flex flex-col gap-1
                         ${activeDatasetId === ds.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
                       onClick={() => setActiveDataset(ds.id)}
