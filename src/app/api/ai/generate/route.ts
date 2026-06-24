@@ -5,10 +5,23 @@ const hf = new HfInference(process.env.HF_TOKEN);
 const MODEL = 'Qwen/Qwen2.5-7B-Instruct';
 
 export async function POST(req: Request) {
+  let analyticsData: any = null;
+  let userQuery = '';
+  let action = '';
+  let chatHistory: any[] = [];
+  
   try {
-    const { analyticsData, userQuery, action, chatHistory } = await req.json();
+    const body = await req.json();
+    analyticsData = body.analyticsData;
+    userQuery = body.userQuery;
+    action = body.action;
+    chatHistory = body.chatHistory;
+  } catch(e) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
 
-    if (action === 'general_conversation') {
+  try {
+    if (action === 'general_conversation' || action === 'greeting') {
       const convPrompt = `You are an AI assistant for a drilling operations dashboard. 
 The user said: "${userQuery}"
 Respond conversationally in 1-2 sentences. Do NOT run analytics.`;
@@ -115,6 +128,7 @@ Requirements:
 * Maximum 200 words
 * Never invent numbers. Use ONLY the data provided.
 * Never assume missing information.
+* EXCLUSIONS: If the user query asks to exclude a category or item (e.g., "except tool failure", "ignoring rig A"), you MUST completely ignore any data points related to that item and rank/analyze the remaining ones.
 * SMART DEFAULTS: If the user asks for "top", "best", "worst", or ranking, and doesn't specify a metric, rank by: 1. CostSaved, 2. TimeSaved, 3. Events, in that priority order.
 
 Format your response EXACTLY like this:
@@ -142,6 +156,12 @@ Do NOT wrap in markdown json blocks. Output the text directly.`;
     return NextResponse.json({ summary });
   } catch (error) {
     console.error('AI Generate Error:', error);
-    return NextResponse.json({ summary: "An error occurred while generating the summary from the analytics engine." });
+    
+    // Fail-Safe Fallback
+    if (analyticsData && analyticsData.totalTimeSaved !== undefined) {
+       return NextResponse.json({ summary: `I encountered an issue generating the deep analysis, but looking at the dashboard overall, we have saved ${analyticsData.totalTimeSaved.toFixed(1)} hours across ${analyticsData.totalEvents || 0} events.` });
+    }
+
+    return NextResponse.json({ summary: "I was unable to complete that analysis. Please try rephrasing the request or selecting a specific metric." });
   }
 }

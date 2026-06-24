@@ -27,6 +27,7 @@ Available intents:
 * trend_analysis
 * summary_generation
 * executive_insights
+* greeting
 * general_conversation
 
 CRITICAL RULES:
@@ -68,7 +69,10 @@ User: "Can you graph the distribution of events?"
 {"intent":"chart_generation","confidence":0.98}
 
 User: "Hello"
-{"intent":"general_conversation","confidence":0.99}
+{"intent":"greeting","confidence":0.99}
+
+User: "What can you do?"
+{"intent":"general_conversation","confidence":0.95}
 
 ---
 Recent Chat Context (IGNORE unless current query explicitly refers back to it with pronouns like 'it', 'them', 'compare to the last one'):
@@ -92,6 +96,11 @@ Output your JSON intent classification below:`;
       result = JSON.parse(rawResponse);
     } catch(e) {
       // JSON parse error
+    }
+
+    // If the LLM strongly believes it's a greeting or general conversation, respect it.
+    if ((result.intent === 'greeting' || result.intent === 'general_conversation') && result.confidence >= 0.80) {
+      return NextResponse.json(result);
     }
 
     // Smart Defaults Override: Never ask for clarification if these keywords are present
