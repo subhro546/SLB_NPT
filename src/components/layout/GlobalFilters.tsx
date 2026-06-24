@@ -29,22 +29,23 @@ export function GlobalFilters() {
 
   const records = activeDataset.records
 
-  // Hierarchical Filter Logic
+  // Hierarchical Filter Logic:
+  // 0: Onshore/offshore -> 1: Asset -> 2: Well Category -> 3: Rig Name -> 4: Categories
   const getHierarchyRecords = (level: number) => {
     return records.filter(r => {
       if (!isActionableCategory(r.Category)) return false;
-      if (level > 0 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
+      if (level > 0 && (globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(r.OnshoreOffshore)) return false;
       if (level > 1 && (globalFilters.companyCodes || []).length > 0 && !(globalFilters.companyCodes || []).includes(r.CompanyCode)) return false;
       if (level > 2 && (globalFilters.wellCategories || []).length > 0 && !(globalFilters.wellCategories || []).includes(r.WellCategory)) return false;
-      if (level > 3 && (globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(r.OnshoreOffshore)) return false;
+      if (level > 3 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
       return true;
     });
   }
 
-  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(0).map(r => r.RigName).filter(Boolean))).sort()
+  const uniqueOnshoreOffshores = Array.from(new Set(getHierarchyRecords(0).map(r => r.OnshoreOffshore).filter(Boolean))).sort()
   const uniqueCompanyCodes = Array.from(new Set(getHierarchyRecords(1).map(r => r.CompanyCode).filter(Boolean))).sort()
-  const uniqueWellCategories = Array.from(new Set(getHierarchyRecords(2).map(r => r.WellCategory).filter(Boolean))).sort()
-  const uniqueOnshoreOffshores = Array.from(new Set(getHierarchyRecords(3).map(r => r.OnshoreOffshore).filter(Boolean))).sort()
+  const uniqueWellCategories = Array.from(new Set(getHierarchyRecords(2).map(r => r.WellCategory).filter(Boolean))).sort().filter(val => val === 'D' || val === 'E')
+  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(3).map(r => r.RigName).filter(Boolean))).sort()
   const uniqueCategories = Array.from(new Set(getHierarchyRecords(4).map(r => r.Category).filter(Boolean))).sort()
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
@@ -65,16 +66,16 @@ export function GlobalFilters() {
 
       <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
         <Select 
-          value={globalFilters.rigNames?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ rigNames: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.onshoreOffshores?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ onshoreOffshores: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Rig Name:</span>
+            <span className="text-muted-foreground mr-1">Onshore/Offshore:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueRigNames.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {uniqueOnshoreOffshores.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
           </SelectContent>
         </Select>
 
@@ -102,21 +103,25 @@ export function GlobalFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueWellCategories.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            {uniqueWellCategories.map(r => (
+              <SelectItem key={r} value={r}>
+                {r === 'D' ? 'Development' : r === 'E' ? 'Exploratory' : r}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select 
-          value={globalFilters.onshoreOffshores?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ onshoreOffshores: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.rigNames?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ rigNames: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
-            <span className="text-muted-foreground mr-1">Onshore/Offshore:</span>
+            <span className="text-muted-foreground mr-1">Rig Name:</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueOnshoreOffshores.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+            {uniqueRigNames.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
 
