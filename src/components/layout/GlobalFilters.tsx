@@ -51,9 +51,7 @@ export function GlobalFilters() {
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
     if (Array.isArray(val)) return acc + val.length
-    if (val && typeof val === 'object' && ('start' in val || 'end' in val)) {
-      return acc + (val.start ? 1 : 0) + (val.end ? 1 : 0)
-    }
+    if (val instanceof Date) return acc + 1
     if (typeof val === 'boolean' && val === true) return acc + 1
     return acc
   }, 0)
@@ -145,24 +143,9 @@ export function GlobalFilters() {
           <Input 
             type="date" 
             className="h-8 text-xs px-2 w-[115px]"
-            value={globalFilters.dateRange?.start ? new Date(globalFilters.dateRange.start.getTime() - (globalFilters.dateRange.start.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+            value={globalFilters.interventionDate ? new Date(globalFilters.interventionDate.getTime() - (globalFilters.interventionDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
             onChange={(e) => setGlobalFilters({ 
-              dateRange: { 
-                start: e.target.value ? new Date(e.target.value) : null,
-                end: globalFilters.dateRange?.end || null
-              } 
-            })}
-          />
-          <span className="text-muted-foreground text-xs">-</span>
-          <Input 
-            type="date" 
-            className="h-8 text-xs px-2 w-[115px]"
-            value={globalFilters.dateRange?.end ? new Date(globalFilters.dateRange.end.getTime() - (globalFilters.dateRange.end.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
-            onChange={(e) => setGlobalFilters({ 
-              dateRange: { 
-                start: globalFilters.dateRange?.start || null,
-                end: e.target.value ? new Date(e.target.value) : null
-              } 
+              interventionDate: e.target.value ? new Date(e.target.value) : null
             })}
           />
         </div>
