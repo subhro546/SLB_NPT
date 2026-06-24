@@ -59,7 +59,8 @@ export default function AIDecisionIntelligence() {
       case 'trend_analysis': return estimateAnnualSavings(data);
       case 'chart_generation': return prepareVisualizationContext(data);
       case 'general_conversation':
-      case 'clarification_required':
+      case 'dashboard_help':
+      case 'greeting':
         return null;
       case 'summary_generation':
       case 'executive_insights':
@@ -120,8 +121,7 @@ export default function AIDecisionIntelligence() {
         body: JSON.stringify({ query: currentQuery, chatHistory })
       })
       const intent = await res.json()
-      
-      const action = intent.intent || intent.action || 'clarification_required'
+      const action = intent.intent || intent.action || 'executive_summary'
       const title = action.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       
       // Step 2 & 3
