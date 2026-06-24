@@ -34,7 +34,7 @@ Respond conversationally in 1-2 sentences. Do NOT run analytics.`;
       ? chatHistory.slice(-4).map((msg: any) => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`).join('\n')
       : 'No history';
 
-    if (action === 'generate_visualization') {
+    if (action === 'chart_generation') {
       const vizPrompt = `You are an expert data visualization AI for a drilling operations dashboard.
 The user wants a chart based on the provided aggregated data.
 
@@ -47,11 +47,12 @@ Your task is to:
 1. Determine the EXACT chart intent from the user query.
 2. Select the correct array from the aggregated data (e.g., aggregatedByEnvironment for onshore/offshore, aggregatedByCategory for categories, aggregatedByRig for rigs, etc.).
 3. NEVER generate a generic category chart unless the question is specifically category-related.
-4. If the intent is not understood or the requested grouping isn't available in the data, set "clarificationRequired": true instead of generating a chart.
-5. If understood, select the most appropriate chart type: 'bar', 'pie', 'line', or 'scatter'.
-6. Determine the 'xAxisKey' (e.g. "Environment", "CompanyCode", "RigName") and 'yAxisKey' (e.g. "TimeSaved", "CostImpact", "Events").
-7. Ensure the chart title, axis labels, and data source MATCH the user question exactly.
-8. Provide a brief executive summary explaining the visualization.
+4. Set "clarificationRequired": false. Never ask for clarification.
+5. Select the most appropriate chart type: 'bar', 'pie', 'line', or 'scatter'.
+6. Determine the 'xAxisKey' (e.g. "Environment", "CompanyCode", "RigName") and 'yAxisKey'.
+7. SMART DEFAULT: If the user does not specify a metric to rank or chart by, automatically use "CostSaved". If "CostSaved" is not available or all 0, use "TimeSaved", then "Events".
+8. Ensure the chart title, axis labels, and data source MATCH the user question exactly.
+9. Provide a brief executive summary explaining the visualization.
 
 Requirements:
 - Output strictly valid JSON without any markdown formatting, backticks, or extra text.
@@ -103,9 +104,6 @@ JSON Structure (if clarification required):
     const prompt = `You are a McKinsey-style executive drilling operations analyst.
 You must analyze the provided data and answer the user query.
 
-Recent Chat Context:
-${historyStr}
-
 Current User Query:
 ${userQuery || "Summarize the current dashboard view."}
 
@@ -117,6 +115,7 @@ Requirements:
 * Maximum 200 words
 * Never invent numbers. Use ONLY the data provided.
 * Never assume missing information.
+* SMART DEFAULTS: If the user asks for "top", "best", "worst", or ranking, and doesn't specify a metric, rank by: 1. CostSaved, 2. TimeSaved, 3. Events, in that priority order.
 
 Format your response EXACTLY like this:
 

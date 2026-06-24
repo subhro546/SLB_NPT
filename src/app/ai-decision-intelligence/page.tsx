@@ -52,16 +52,17 @@ export default function AIDecisionIntelligence() {
 
   const runAnalytics = (action: string, extraArgs?: any) => {
     switch (action) {
-      case 'intervention_performance': return interventionPerformance(data);
-      case 'savings_potential': return savingsPotential(data);
-      case 'rig_intervention_comparison': return assetInterventionComparison(data);
-      case 'recommend_intervention': return recommendIntervention(data);
-      case 'estimate_annual_savings': return estimateAnnualSavings(data);
-      case 'generate_visualization': return prepareVisualizationContext(data);
+      case 'ranking': return interventionPerformance(data);
+      case 'data_analysis': return savingsPotential(data);
+      case 'comparison': return assetInterventionComparison(data);
+      case 'executive_insights': return recommendIntervention(data);
+      case 'trend_analysis': return estimateAnnualSavings(data);
+      case 'chart_generation': return prepareVisualizationContext(data);
       case 'general_conversation':
       case 'clarification_required':
         return null;
-      case 'summarize_current_view':
+      case 'summary_generation':
+      case 'executive_insights':
       default:
         return summarizeCurrentView(data);
     }
@@ -294,22 +295,22 @@ export default function AIDecisionIntelligence() {
 
       {/* Section 2: Analysis Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2 shrink-0">
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('intervention_performance', 'Top Interventions')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('ranking', 'Top Interventions')}>
           <span className="font-semibold text-xs text-blue-500">Top Interventions</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('savings_potential', 'Savings Potential')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('data_analysis', 'Savings Potential')}>
           <span className="font-semibold text-xs text-green-500">Savings Potential</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('rig_intervention_comparison', 'Rig Comparison')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('comparison', 'Rig Comparison')}>
           <span className="font-semibold text-xs text-purple-500">Rig Comparison</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('recommend_intervention', 'Recommended Action')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('executive_insights', 'Recommended Action')}>
           <span className="font-semibold text-xs text-amber-500">Recommended Action</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('estimate_annual_savings', 'Annual Projections')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('trend_analysis', 'Annual Projections')}>
           <span className="font-semibold text-xs text-indigo-500">Annual Projections</span>
         </Button>
-        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summarize_current_view', 'View Summary')}>
+        <Button variant="outline" className="h-14 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => handleAction('summary_generation', 'View Summary')}>
           <span className="font-semibold text-xs text-rose-500">View Summary</span>
         </Button>
       </div>

@@ -20,11 +20,13 @@ export async function POST(req: Request) {
 Your job is to identify user intent based on their latest query and recent conversation context.
 
 Available intents:
-* savings_potential
-* rig_intervention_comparison
-* recommend_intervention
-* estimate_annual_savings
-* generate_visualization
+* chart_generation
+* data_analysis
+* comparison
+* ranking
+* trend_analysis
+* summary_generation
+* executive_insights
 * general_conversation
 
 CRITICAL RULES:
@@ -39,37 +41,37 @@ Output Format:
 
 Examples:
 User: "Which intervention generated maximum savings?"
-{"intent":"intervention_performance","confidence":0.97}
+{"intent":"ranking","confidence":0.97}
 
 User: "Where can we save the most additional time?"
-{"intent":"savings_potential","confidence":0.95}
+{"intent":"data_analysis","confidence":0.95}
 
 User: "Estimate annual savings potential"
-{"intent":"estimate_annual_savings","confidence":0.99}
+{"intent":"executive_insights","confidence":0.99}
 
 User: "Compare intervention effectiveness across rigs."
-{"intent":"rig_intervention_comparison","confidence":0.98}
+{"intent":"comparison","confidence":0.98}
 
 User: "What intervention should management prioritize next?"
-{"intent":"recommend_intervention","confidence":0.99}
+{"intent":"executive_insights","confidence":0.99}
 
 User: "Show me a chart of the cost impact by well category."
-{"intent":"generate_visualization","confidence":0.98}
+{"intent":"chart_generation","confidence":0.98}
 
 User: "Plot the time saved across all rigs."
-{"intent":"generate_visualization","confidence":0.98}
+{"intent":"chart_generation","confidence":0.98}
 
 User: "Visualize the biggest remaining savings opportunities."
-{"intent":"generate_visualization","confidence":0.97}
+{"intent":"chart_generation","confidence":0.97}
 
 User: "Can you graph the distribution of events?"
-{"intent":"generate_visualization","confidence":0.98}
+{"intent":"chart_generation","confidence":0.98}
 
 User: "Hello"
 {"intent":"general_conversation","confidence":0.99}
 
 ---
-Recent Chat Context:
+Recent Chat Context (IGNORE unless current query explicitly refers back to it with pronouns like 'it', 'them', 'compare to the last one'):
 ${historyStr}
 
 Current User Query: "${query}"
@@ -85,10 +87,31 @@ Output your JSON intent classification below:`;
     let rawResponse = out.choices[0].message.content || "{}";
     rawResponse = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    const result = JSON.parse(rawResponse);
+    let result = { intent: 'clarification_required', confidence: 0 };
+    try {
+      result = JSON.parse(rawResponse);
+    } catch(e) {
+      // JSON parse error
+    }
+
+    // Smart Defaults Override: Never ask for clarification if these keywords are present
+    const qLower = query.toLowerCase();
+    const noClarifyKeywords = ['top', 'bottom', 'best', 'worst', 'compare', 'trend', 'distribution', 'chart', 'graph', 'pie chart', 'bar chart', 'line chart', 'visualize', 'show', 'generate'];
     
-    // Fallback handling
-    if (!result.intent || result.confidence < 0.70) {
+    const containsKeyword = noClarifyKeywords.some(kw => qLower.includes(kw));
+
+    if (containsKeyword) {
+      if (qLower.includes('chart') || qLower.includes('graph') || qLower.includes('visualize') || qLower.includes('plot')) {
+        result.intent = 'chart_generation';
+        result.confidence = 1.0;
+      } else if (qLower.includes('compare') || qLower.includes('trend') || qLower.includes('distribution')) {
+        result.intent = 'comparison';
+        result.confidence = 1.0;
+      } else {
+        result.intent = 'ranking';
+        result.confidence = 1.0;
+      }
+    } else if (!result.intent || result.confidence < 0.70) {
       return NextResponse.json({ intent: 'clarification_required', confidence: result.confidence || 0.0 });
     }
 
