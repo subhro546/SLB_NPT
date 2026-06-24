@@ -27,6 +27,13 @@ export function useFilteredData(): NPTRecord[] {
       if ((globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(record.OnshoreOffshore)) return false
       if ((globalFilters.categories || []).length > 0 && !(globalFilters.categories || []).includes(record.Category)) return false
       
+      if (globalFilters.dateRange && (globalFilters.dateRange.start || globalFilters.dateRange.end)) {
+        if (!record.Month) return false;
+        const rowDate = new Date(record.Month);
+        if (globalFilters.dateRange.start && rowDate < globalFilters.dateRange.start) return false;
+        if (globalFilters.dateRange.end && rowDate > globalFilters.dateRange.end) return false;
+      }
+
       return true
     })
 

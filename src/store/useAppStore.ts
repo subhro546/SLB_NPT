@@ -40,6 +40,7 @@ export interface Dataset {
 }
 
 export interface GlobalFilters {
+  dateRange?: { start: Date | null; end: Date | null };
   rigNames: string[];
   companyCodes: string[];
   wellCategories: string[];

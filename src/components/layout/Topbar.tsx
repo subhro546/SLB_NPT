@@ -82,7 +82,9 @@ export function Topbar() {
         <div className="flex items-center gap-2">
           <Select value={savingsMethod} onValueChange={(value) => setSavingsMethod(value as 'method1' | 'method2')}>
             <SelectTrigger className="w-[110px] sm:w-[150px] h-9 bg-transparent text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 text-xs sm:text-sm">
-              <SelectValue placeholder="Savings Method" />
+              <SelectValue placeholder="Savings Method">
+                {savingsMethod === 'method1' ? 'Data driven' : 'client method'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="method1">Data driven</SelectItem>

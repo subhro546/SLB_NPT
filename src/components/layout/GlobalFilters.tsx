@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import { useMemo } from "react"
 import { formatActionableCategory, isActionableCategory } from "@/lib/constants"
 
@@ -139,6 +140,32 @@ export function GlobalFilters() {
           </SelectContent>
         </Select>
 
+        <div className="flex items-center gap-1.5 ml-2">
+          <span className="text-muted-foreground text-xs mr-1 whitespace-nowrap">Intervention Date:</span>
+          <Input 
+            type="date" 
+            className="h-8 text-xs px-2 w-[115px]"
+            value={globalFilters.dateRange?.start ? new Date(globalFilters.dateRange.start.getTime() - (globalFilters.dateRange.start.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+            onChange={(e) => setGlobalFilters({ 
+              dateRange: { 
+                start: e.target.value ? new Date(e.target.value) : null,
+                end: globalFilters.dateRange?.end || null
+              } 
+            })}
+          />
+          <span className="text-muted-foreground text-xs">-</span>
+          <Input 
+            type="date" 
+            className="h-8 text-xs px-2 w-[115px]"
+            value={globalFilters.dateRange?.end ? new Date(globalFilters.dateRange.end.getTime() - (globalFilters.dateRange.end.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+            onChange={(e) => setGlobalFilters({ 
+              dateRange: { 
+                start: globalFilters.dateRange?.start || null,
+                end: e.target.value ? new Date(e.target.value) : null
+              } 
+            })}
+          />
+        </div>
 
       </div>
 
