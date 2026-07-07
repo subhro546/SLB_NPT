@@ -139,13 +139,25 @@ export function GlobalFilters() {
         </Select>
 
         <div className="flex items-center gap-1.5 ml-2">
-          <span className="text-muted-foreground text-xs mr-1 whitespace-nowrap">Intervention Date:</span>
+          <span className="text-muted-foreground text-xs mr-1 whitespace-nowrap">From Date:</span>
           <Input 
             type="date" 
             className="h-8 text-xs px-2 w-[115px]"
-            value={globalFilters.interventionDate ? new Date(globalFilters.interventionDate.getTime() - (globalFilters.interventionDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+            value={globalFilters.interventionStartDate ? new Date(globalFilters.interventionStartDate.getTime() - (globalFilters.interventionStartDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
             onChange={(e) => setGlobalFilters({ 
-              interventionDate: e.target.value ? new Date(e.target.value) : null
+              interventionStartDate: e.target.value ? new Date(e.target.value) : null
+            })}
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 ml-2">
+          <span className="text-muted-foreground text-xs mr-1 whitespace-nowrap">To Date:</span>
+          <Input 
+            type="date" 
+            className="h-8 text-xs px-2 w-[115px]"
+            value={globalFilters.interventionEndDate ? new Date(globalFilters.interventionEndDate.getTime() - (globalFilters.interventionEndDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+            onChange={(e) => setGlobalFilters({ 
+              interventionEndDate: e.target.value ? new Date(e.target.value) : null
             })}
           />
         </div>

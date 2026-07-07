@@ -40,7 +40,8 @@ export interface Dataset {
 }
 
 export interface GlobalFilters {
-  interventionDate?: Date | null;
+  interventionStartDate?: Date | null;
+  interventionEndDate?: Date | null;
   rigNames: string[];
   companyCodes: string[];
   wellCategories: string[];

@@ -26,13 +26,21 @@ export function useFilteredData(): NPTRecord[] {
       if ((globalFilters.wellCategories || []).length > 0 && !(globalFilters.wellCategories || []).includes(record.WellCategory)) return false
       if ((globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(record.OnshoreOffshore)) return false
       if ((globalFilters.categories || []).length > 0 && !(globalFilters.categories || []).includes(record.Category)) return false
-      if (globalFilters.interventionDate) {
+      if (globalFilters.interventionStartDate) {
         if (!record.Month) return false;
         const rowDate = new Date(record.Month);
-        // Compare year, month, and date
-        if (rowDate.getFullYear() !== globalFilters.interventionDate.getFullYear() ||
-            rowDate.getMonth() !== globalFilters.interventionDate.getMonth() ||
-            rowDate.getDate() !== globalFilters.interventionDate.getDate()) {
+        const startDate = new Date(globalFilters.interventionStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        if (rowDate < startDate) {
+          return false;
+        }
+      }
+      if (globalFilters.interventionEndDate) {
+        if (!record.Month) return false;
+        const rowDate = new Date(record.Month);
+        const endDate = new Date(globalFilters.interventionEndDate);
+        endDate.setHours(23, 59, 59, 999);
+        if (rowDate > endDate) {
           return false;
         }
       }
