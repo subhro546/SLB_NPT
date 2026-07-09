@@ -158,6 +158,12 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'slb-npt-storage',
+      partialize: (state) => ({
+        currency: state.currency,
+        savingsMethod: state.savingsMethod,
+        globalFilters: state.globalFilters,
+        // specifically excluding datasets and activeDatasetId due to 5MB localStorage limit
+      }),
     }
   )
 );
