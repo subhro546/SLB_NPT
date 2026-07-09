@@ -265,15 +265,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     activitiesAfterFilter: validActivities.length,
     uniqueRigsActivities: Array.from(new Set(validActivities.map((r: any) => normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown'))))),
     uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedRig))),
-    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown'))))),
+    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeCategoryByCode(String(getValue(r, 'minor', 'minorcode') || 'Unknown'))))),
     uniqueCategoriesAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedCategory))),
     first20Activities: validActivities.slice(0, 20).map((r: any) => ({
-      originalMinorCode: getValue(r, 'minorcode'),
-      normalizedCategory: normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown')),
-      originalRigValue: getValue(r, 'rigname', 'rig', 'facility', 'platform'),
-      normalizedRig: normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown')),
-      originalDateValue: getValue(r, 'date'),
-      parsedDate: r['_parsedDate'] ? format(r['_parsedDate'], 'yyyy-MM-dd') : 'Invalid'
+      Minor: getValue(r, 'minor', 'minorcode'),
+      NormalizedCategory: normalizeCategoryByCode(String(getValue(r, 'minor', 'minorcode') || 'Unknown'))
     })),
     first20Alerts: parsedAlerts.slice(0, 20).map((a: any) => ({
       originalCategory: a.rawCde,
@@ -294,7 +290,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       
       for (const act of validActivities) {
         const actRig = String(getValue(act, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-        const actCat = normalizeCategoryByCode(String(getValue(act, 'minorcode') || 'Unknown'));
+        const actCat = normalizeCategoryByCode(String(getValue(act, 'minor', 'minorcode') || 'Unknown'));
         const actDate = act['_parsedDate'];
         
         let matchRig = alert.normalizedRig === normalizeRigName(actRig);
@@ -331,7 +327,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let recordsMerged = 0;
 
   const records: NPTRecord[] = validActivities.map((row: any, index) => {
-    const rawCategory = String(getValue(row, 'minorcode') || 'Unknown');
+    const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
     const normalizedCat = normalizeCategoryByCode(rawCategory);
 
     originalCats.add(rawCategory);
