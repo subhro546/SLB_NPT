@@ -16,6 +16,7 @@ export default function UploadPage() {
   const { addDataset, datasets, activeDatasetId, setActiveDataset } = useAppStore()
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [debugData, setDebugData] = useState<any>(null)
   
   const [activitiesFile, setActivitiesFile] = useState<File | null>(null);
   const [alertsFile, setAlertsFile] = useState<File | null>(null);
@@ -28,6 +29,7 @@ export default function UploadPage() {
 
     setIsParsing(true);
     setError(null);
+    setDebugData(null);
 
     const reader1 = new FileReader();
     const reader2 = new FileReader();
@@ -51,6 +53,10 @@ export default function UploadPage() {
               recordsMerged: result.recordsMerged
             }
           };
+
+          if (result.recordsMerged === 0 && result.debugLog) {
+            setDebugData(result.debugLog);
+          }
 
           addDataset(newDataset);
           setActivitiesFile(null);
@@ -182,6 +188,17 @@ export default function UploadPage() {
               )}
             </CardContent>
           </Card>
+
+          {debugData && (
+            <div className="mt-8 bg-black/5 rounded-2xl border border-black/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/10 bg-black/[0.02]">
+                <h3 className="font-semibold text-gray-800">Merge Diagnostics</h3>
+              </div>
+              <div className="p-6 overflow-auto max-h-[600px] text-sm text-gray-700">
+                <pre>{JSON.stringify(debugData, null, 2)}</pre>
+              </div>
+            </div>
+          )}
 
           {activeDatasetId && datasets.find(d => d.id === activeDatasetId) && (
             <Card>

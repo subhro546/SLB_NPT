@@ -8,6 +8,7 @@ export interface ParseResult {
   originalCategoriesCount: number;
   normalizedCategoriesCount: number;
   recordsMerged: number;
+  debugLog?: any;
 }
 
 const OFFSHORE_RIG_COSTS: Record<string, number> = {
@@ -255,6 +256,55 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     };
   });
 
+  // --- DEBUGGING LOGIC ---
+  const debugLog: any = {
+    totalActivitiesLoaded: rawActivities.length,
+    totalAlertsLoaded: rawAlerts.length,
+    activitiesAfterFilter: validActivities.length,
+    uniqueRigsActivities: Array.from(new Set(validActivities.map((r: any) => String(getValue(r, 'rigname', 'rig') || 'Unknown')))),
+    uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.rig))),
+    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase') || 'Unknown'))))),
+    uniqueCategoriesAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedCategory))),
+    alertAnalysis: []
+  };
+
+  let alertCount = 0;
+  for (const alert of parsedAlerts) {
+    if (alertCount < 20) {
+      let candidatesBeforeTime = 0;
+      let reasons = { rigMismatch: 0, catMismatch: 0, dateMismatch: 0 };
+      
+      for (const act of validActivities) {
+        const actRig = String(getValue(act, 'rigname', 'rig') || 'Unknown');
+        const actCat = normalizeActivityCategory(String(getValue(act, 'category', 'nptcategory', 'phase') || 'Unknown'));
+        const actDate = act['_parsedDate'];
+        
+        let matchRig = alert.rig === actRig;
+        let matchCat = alert.normalizedCategory === actCat;
+        let matchDate = alert.date && actDate && alert.date.getTime() === actDate.getTime();
+        
+        if (!matchRig) reasons.rigMismatch++;
+        if (!matchCat) reasons.catMismatch++;
+        if (!matchDate) reasons.dateMismatch++;
+        
+        if (matchRig && matchCat && matchDate) {
+          candidatesBeforeTime++;
+        }
+      }
+      
+      debugLog.alertAnalysis.push({
+        rig: alert.rig,
+        category: alert.normalizedCategory,
+        date: alert.date ? format(alert.date, 'yyyy-MM-dd') : 'Invalid',
+        candidatesFound: candidatesBeforeTime,
+        reasonsIfNone: candidatesBeforeTime === 0 ? reasons : null
+      });
+    }
+    alertCount++;
+  }
+  console.log("DEBUG LOG:", debugLog);
+  // --- END DEBUGGING LOGIC ---
+
   const originalCats = new Set<string>();
   const normalizedCats = new Set<string>();
   let recordsMerged = 0;
@@ -374,15 +424,14 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   }
 
   if (recordsMerged === 0) {
-    const actKeys = rawActivities.length > 0 ? Object.keys(rawActivities[0]).join(', ') : 'none';
-    const alertKeys = rawAlerts.length > 0 ? Object.keys(rawAlerts[0]).join(', ') : 'none';
-    throw new Error(`DEBUG HELP: 0 records merged. Activities Keys: [${actKeys}]. Alerts Keys: [${alertKeys}]. Please send this error!`);
+    console.warn("0 records merged. Returning debugLog to UI.");
   }
 
   return {
     records,
     originalCategoriesCount: originalCats.size,
     normalizedCategoriesCount: normalizedCats.size,
-    recordsMerged
+    recordsMerged,
+    debugLog
   };
 }
