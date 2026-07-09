@@ -282,285 +282,150 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     alertAnalysis: []
   };
 
-  // --- BEGIN MERGE LOGIC AND DEBUGGING ---
-  const originalCats = new Set<string>();
-  const normalizedCats = new Set<string>();
-  let recordsMerged = 0;
-
-  const records: NPTRecord[] = [];
-  const matchDiagnostics: any[] = [];
+  // --- BEGIN MERGE AUDIT REPORT LOGIC ---
+  const auditReport: any = {
+    summary: {
+      TotalAlerts: parsedAlerts.length,
+      PerfectMatches: 0,
+      CategoryMismatches: 0,
+      NoInterventionFound: 0,
+      NoActivityFound: 0,
+      AlertsWithMatchingInterventionCodes: 0
+    },
+    table: [],
+    details: []
+  };
 
   for (const alert of parsedAlerts) {
-    let bestMatch: any = null;
-    let minDiff = Infinity;
-    let matchedIndex = -1;
-    let candidatesFound = 0;
-    const candidateDiagnostics: any[] = [];
-
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
     if (!alertDateStr) {
-      matchDiagnostics.push({
-        AlertNumber: alert.alertNumber,
-        Rig: alert.normalizedRig,
-        Category: alert.normalizedCategory,
-        Date: 'Invalid',
-        CandidatesFound: 0,
-        SelectedActivity: 'None'
-      });
-      continue;
+      continue; // Skip invalid dates
     }
 
+    const sameRigDateActivities = [];
+    let hasInterventionCode = false;
+    let perfectMatchFound = false;
+    let bestCandidate: any = null;
+    let minDiff = Infinity;
+    
+    // Find ALL activity records having same normalized Rig and same Date
     for (let i = 0; i < validActivities.length; i++) {
       const row = validActivities[i];
-
       const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
       const normalizedRig = normalizeRigName(rawRigName);
-
-      const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
-      const normalizedCat = normalizeCategoryByCode(rawCategory);
-
+      
       let dateObj = row['_parsedDate'];
       const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
-
-      if (alert.normalizedRig === normalizedRig &&
-          alert.normalizedCategory === normalizedCat &&
-          alertDateStr === dateObjStr) {
-          
-          candidatesFound++;
-          
-          let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-          let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
-          if (Number(getValue(row, 'hours', 'duration')) === 0 && endTimeHour > startTimeHour) {
-             // already handled later, but here just use start/end directly
-          }
-          let eventNo = getValue(row, 'eventno', 'eventnumber') || i + 1;
-          
-          let diff = Infinity;
-          let inInterval = false;
-          
-          // Handle overnight activities where end time is < start time
-          let adjustedEndTime = endTimeHour;
-          if (endTimeHour < startTimeHour) {
-            adjustedEndTime += 24; // spans to next day
-          }
-          
-          let adjustedAlertTime = alert.alertTimeHour;
-          // If alert is early morning but activity started late night before, adjust alert time
-          if (alert.alertTimeHour < startTimeHour && endTimeHour < startTimeHour) {
-             adjustedAlertTime += 24;
-          }
-
-          if (adjustedAlertTime >= startTimeHour && adjustedAlertTime <= adjustedEndTime) {
-            inInterval = true;
-            diff = 0;
-          } else {
-            diff = Math.min(Math.abs(alert.alertTimeHour - startTimeHour), Math.abs(alert.alertTimeHour - endTimeHour));
-          }
-
-          let rejectedReason = 'Selected as best match (pending others)';
-          
-          if (diff <= 12) {
-              if (diff < minDiff) {
-                  // The previous best match is now rejected
-                  if (bestMatch) {
-                    const prevDiag = candidateDiagnostics.find(d => d.EventNumber === (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1));
-                    if (prevDiag) prevDiag.RejectedReason = `Diff ${prevDiag.TimeDifference}h > new minDiff ${diff.toFixed(2)}h`;
-                  }
-                  
-                  minDiff = diff;
-                  bestMatch = row;
-                  matchedIndex = i;
-              } else {
-                  rejectedReason = `Diff ${diff.toFixed(2)}h >= minDiff ${minDiff.toFixed(2)}h`;
-              }
-          } else {
-              rejectedReason = `Diff ${diff.toFixed(2)}h > 12h limit`;
-          }
-
-          candidateDiagnostics.push({
-            EventNumber: eventNo,
-            ActivityStartTime: startTimeHour.toFixed(2),
-            ActivityEndTime: endTimeHour.toFixed(2),
-            AlertTime: alert.alertTimeHour.toFixed(2),
-            TimeDifference: diff.toFixed(2),
-            InInterval: inInterval,
-            RejectedReason: rejectedReason
-          });
-      }
-    }
-    
-    if (candidatesFound === 0) {
-      const missedCandidates = [];
-      for (let i = 0; i < validActivities.length; i++) {
-        const row = validActivities[i];
-        const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-        const normalizedRig = normalizeRigName(rawRigName);
-        let dateObj = row['_parsedDate'];
-        const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
+      
+      if (alert.normalizedRig === normalizedRig && alertDateStr === dateObjStr) {
+        let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+        let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+        let duration = Number(getValue(row, 'hours', 'duration')) || 0;
         
-        if (alert.normalizedRig === normalizedRig && alertDateStr === dateObjStr) {
-          let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-          let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
-          let eventNo = getValue(row, 'eventno', 'eventnumber') || i + 1;
-          const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
-          
-          missedCandidates.push({
-            EventNumber: eventNo,
-            Minor: rawCategory,
-            NormalizedCategory: normalizeCategoryByCode(rawCategory),
-            StartTime: startTimeHour.toFixed(2),
-            EndTime: endTimeHour.toFixed(2)
-          });
+        let adjustedEndTime = endTimeHour;
+        if (endTimeHour < startTimeHour) adjustedEndTime += 24;
+        
+        let adjustedAlertTime = alert.alertTimeHour;
+        if (alert.alertTimeHour < startTimeHour && endTimeHour < startTimeHour) adjustedAlertTime += 24;
+
+        let inInterval = (adjustedAlertTime >= startTimeHour && adjustedAlertTime <= adjustedEndTime);
+        let diff = inInterval ? 0 : Math.min(Math.abs(alert.alertTimeHour - startTimeHour), Math.abs(alert.alertTimeHour - endTimeHour));
+        
+        const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
+        const normalizedCat = normalizeCategoryByCode(rawCategory);
+        const description = String(getValue(row, 'description', 'remarks', 'details') || '');
+        
+        const isIntervention = rawCategory.toUpperCase().startsWith('22') || rawCategory.toUpperCase().startsWith('8');
+        if (isIntervention) hasInterventionCode = true;
+
+        const eventNo = getValue(row, 'eventno', 'eventnumber') || i + 1;
+
+        sameRigDateActivities.push({
+          EventNumber: eventNo,
+          MinorCode: rawCategory,
+          NormalizedCategory: normalizedCat,
+          StartTime: startTimeHour.toFixed(2),
+          EndTime: endTimeHour.toFixed(2),
+          Duration: duration,
+          Description: description,
+          TimeDifference: diff.toFixed(2),
+          InInterval: inInterval,
+          IsIntervention: isIntervention
+        });
+        
+        // Check for perfect match logic (Same Category)
+        if (normalizedCat === alert.normalizedCategory) {
+           if (diff < minDiff) {
+             minDiff = diff;
+             bestCandidate = eventNo;
+             perfectMatchFound = true;
+           }
+        } else if (!perfectMatchFound && isIntervention) {
+           // If no perfect match yet, track best intervention candidate for the mismatch info
+           if (diff < minDiff) {
+             minDiff = diff;
+             bestCandidate = eventNo;
+           }
         }
       }
-      
-      matchDiagnostics.push({
-        AlertNumber: alert.alertNumber,
-        Rig: alert.normalizedRig,
-        Category: alert.normalizedCategory,
-        Date: alertDateStr,
-        CandidatesFound: candidatesFound,
-        SelectedActivity: 'None',
-        MissedCandidates: missedCandidates
-      });
+    }
+
+    let verdict = "";
+    if (sameRigDateActivities.length === 0) {
+      verdict = "⚫ NO ACTIVITY FOUND";
+      auditReport.summary.NoActivityFound++;
+    } else if (perfectMatchFound) {
+      verdict = "🟢 PERFECT MATCH";
+      auditReport.summary.PerfectMatches++;
+      auditReport.summary.AlertsWithMatchingInterventionCodes++;
+    } else if (hasInterventionCode) {
+      verdict = "🟡 CATEGORY MISMATCH";
+      auditReport.summary.CategoryMismatches++;
+      auditReport.summary.AlertsWithMatchingInterventionCodes++;
     } else {
-      matchDiagnostics.push({
-        AlertNumber: alert.alertNumber,
-        Rig: alert.normalizedRig,
-        Category: alert.normalizedCategory,
-        Date: alertDateStr,
-        CandidatesFound: candidatesFound,
-        SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None',
-        CandidateDetails: candidateDiagnostics
-      });
+      verdict = "🔴 NO INTERVENTION FOUND";
+      auditReport.summary.NoInterventionFound++;
     }
 
-    if (bestMatch) {
-      recordsMerged++;
-      const row = bestMatch;
-      
-      const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-      const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
-      const normalizedCat = normalizeCategoryByCode(rawCategory);
-      
-      originalCats.add(rawCategory);
-      normalizedCats.add(normalizedCat);
+    const interventionCodesPresent = sameRigDateActivities
+      .filter(a => a.IsIntervention)
+      .map(a => a.MinorCode)
+      .join(', ') || 'None';
 
-      let dateObj = row['_parsedDate'];
-      let monthStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : 'Unknown';
+    auditReport.table.push({
+      AlertNo: alert.alertNumber,
+      Rig: alert.rig,
+      Date: alertDateStr,
+      AlertCategory: alert.normalizedCategory,
+      InterventionCodesPresent: interventionCodesPresent,
+      BestCandidate: bestCandidate ? `Event ${bestCandidate}` : 'None',
+      Verdict: verdict
+    });
 
-      let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-      let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
-      let duration = Number(getValue(row, 'hours', 'duration')) || 0;
-
-      if (duration === 0 && endTimeHour > startTimeHour) {
-         duration = endTimeHour - startTimeHour;
-      }
-
-      let matchConfidence = "No Match";
-      if (minDiff <= 1) matchConfidence = "100%";
-      else if (minDiff <= 2) matchConfidence = "95%";
-      else if (minDiff <= 3) matchConfidence = "90%";
-      else if (minDiff <= 4) matchConfidence = "85%";
-
-      let rigCost = getRigCost(rawRigName);
-      let improvementFactor = 0.20 + (Math.random() * 0.30);
-      let timeSaved = duration * improvementFactor;
-      let costSaved = (timeSaved / 24) * rigCost;
-
-      const formatTimeStr = (decimalHour: number) => {
-        const h = Math.floor(decimalHour);
-        const m = Math.round((decimalHour - h) * 60);
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      };
-
-      records.push({
-        EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || matchedIndex + 1,
-        RigName: rawRigName,
-        WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
-        WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
-        CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
-        CDE: alert.cde,
-        Depth: Number(getValue(row, 'depth')) || 0,
-        OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
-        Category: normalizedCat,
-        Hours: duration,
-        CostUSDPerDay: rigCost,
-        CostImpact: duration * (rigCost / 24),
-        TimeSaved: timeSaved,
-        CostSaved: costSaved,
-        InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
-        MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
-        Month: monthStr,
-        
-        AlertNumber: alert.alertNumber,
-        AlertTime: formatTimeStr(alert.alertTimeHour),
-        Observation: alert.observation,
-        Recommendation: alert.recommendation,
-        TimeDifference: minDiff,
-        MatchConfidence: matchConfidence,
-        ImprovementFactor: improvementFactor,
-        RigCost: rigCost,
-        NormalizedCategory: normalizedCat,
-        Duration: duration,
-        StartTime: formatTimeStr(startTimeHour),
-        EndTime: formatTimeStr(endTimeHour)
-      });
-    }
+    auditReport.details.push({
+      AlertNumber: alert.alertNumber,
+      AlertRig: alert.rig,
+      AlertDate: alertDateStr,
+      AlertTime: alert.alertTimeHour.toFixed(2),
+      AlertCategory: alert.normalizedCategory,
+      Verdict: verdict,
+      SameRigDateActivities: sameRigDateActivities
+    });
   }
 
-  // --- MERGE DEBUG OUTPUT ---
-  console.log(`Total Alerts = ${parsedAlerts.length}`);
-  for (const diag of matchDiagnostics) {
-    console.log(`\nAlert Number: ${diag.AlertNumber} | Rig: ${diag.Rig} | Category: ${diag.Category} | Date: ${diag.Date}`);
-    console.log(`Candidate Activities Found: ${diag.CandidatesFound}`);
-    console.log(`Selected Activity: ${diag.SelectedActivity}`);
-    
-    if (diag.CandidateDetails && diag.CandidateDetails.length > 0) {
-       console.log(`  Candidates:`);
-       for (const c of diag.CandidateDetails) {
-         console.log(`    - Event No: ${c.EventNumber} | Start: ${c.ActivityStartTime} | End: ${c.ActivityEndTime} | AlertTime: ${c.AlertTime} | Diff: ${c.TimeDifference}h | InInterval: ${c.InInterval} | Reason: ${c.RejectedReason}`);
-       }
-    } else if (diag.MissedCandidates && diag.MissedCandidates.length > 0) {
-       console.log(`  Missed Candidates (Same Rig & Date):`);
-       for (const c of diag.MissedCandidates) {
-         console.log(`    - Event No: ${c.EventNumber} | Minor: ${c.Minor} | Normalized: ${c.NormalizedCategory} | Start: ${c.StartTime} | End: ${c.EndTime}`);
-       }
-    }
-  }
-  console.log(`\nMatched Alerts = ${recordsMerged}`);
-  console.log(`Merged Dataset Length = ${records.length}`);
-  console.log(`First 10 rows of mergedEvents:`, JSON.stringify(records.slice(0, 10), null, 2));
-
-  debugLog.alertAnalysis = matchDiagnostics;
-
-  if (records.length === 0) {
-    if (totalRowsChecked === 0) {
-      if (rawActivities.length === 0) {
-        throw new Error("No valid data found. The Time & Activities file appears to be empty or could not be parsed as Excel.");
-      } else {
-        const sampleKeys = Object.keys(rawActivities[0]).join(', ');
-        throw new Error(`No valid data found. Checked 0 rows because no rows matched the expected columns (Event No, WellID, Rig Name). Found columns: ${sampleKeys}`);
-      }
-    }
-    const maxDateStr = maxDateFound ? format(maxDateFound, 'yyyy-MM-dd') : 'None';
-    throw new Error(`No valid data found. Checked ${totalRowsChecked} rows, successfully parsed ${datesSuccessfullyParsed} dates. Max date found was ${maxDateStr}. (Ensure records are >= 2026-03-01)`);
-  }
-
-  if (recordsMerged === 0) {
-    console.warn("0 records merged. Returning debugLog to UI.");
-    
-    const rawFirstActivityRow = rawActivities.length > 0 ? rawActivities[0].__raw_original_row : null;
-    const rawKeys = rawFirstActivityRow ? Object.keys(rawFirstActivityRow) : [];
-    
-    throw new Error(`DEBUG HELP: 0 records merged.\n\nRAW ACTIVITIES FIRST ROW KEYS:\n${JSON.stringify(rawKeys, null, 2)}\n\nRAW ACTIVITIES FIRST ROW FULL JSON:\n${JSON.stringify(rawFirstActivityRow, null, 2)}\n\nFirst 20 Activities:\n${JSON.stringify(debugLog.first20Activities, null, 2)}\n\nFirst 20 Alerts:\n${JSON.stringify(debugLog.first20Alerts, null, 2)}`);
-  }
-
+  console.log("=== MERGE AUDIT REPORT ===");
+  console.log(JSON.stringify(auditReport.summary, null, 2));
+  console.table(auditReport.table);
+  
+  // Throw error to display the debug report in the UI panel since we are in debug mode
+  throw new Error(`DEBUG HELP: MERGE AUDIT REPORT GENERATED.\n\nSUMMARY:\n${JSON.stringify(auditReport.summary, null, 2)}\n\nAUDIT TABLE:\n${JSON.stringify(auditReport.table, null, 2)}\n\nDETAILED ACTIVITY MATCHING:\n${JSON.stringify(auditReport.details, null, 2)}`);
+  
+  // The below will never be reached in this mode but satisfies TypeScript
   return {
-    records,
-    originalCategoriesCount: originalCats.size,
-    normalizedCategoriesCount: normalizedCats.size,
-    recordsMerged,
-    debugLog
+    records: [],
+    originalCategoriesCount: 0,
+    normalizedCategoriesCount: 0,
+    recordsMerged: 0,
+    debugLog: auditReport
   };
 }
