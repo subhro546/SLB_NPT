@@ -295,6 +295,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     let minDiff = Infinity;
     let matchedIndex = -1;
     let candidatesFound = 0;
+    const candidateDiagnostics: any[] = [];
 
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
     if (!alertDateStr) {
@@ -328,12 +329,63 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           candidatesFound++;
           
           let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-          const diff = Math.abs(alert.alertTimeHour - startTimeHour);
-          if (diff <= 4 && diff < minDiff) {
-              minDiff = diff;
-              bestMatch = row;
-              matchedIndex = i;
+          let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+          if (Number(getValue(row, 'hours', 'duration')) === 0 && endTimeHour > startTimeHour) {
+             // already handled later, but here just use start/end directly
           }
+          let eventNo = getValue(row, 'eventno', 'eventnumber') || i + 1;
+          
+          let diff = Infinity;
+          let inInterval = false;
+          
+          // Handle overnight activities where end time is < start time
+          let adjustedEndTime = endTimeHour;
+          if (endTimeHour < startTimeHour) {
+            adjustedEndTime += 24; // spans to next day
+          }
+          
+          let adjustedAlertTime = alert.alertTimeHour;
+          // If alert is early morning but activity started late night before, adjust alert time
+          if (alert.alertTimeHour < startTimeHour && endTimeHour < startTimeHour) {
+             adjustedAlertTime += 24;
+          }
+
+          if (adjustedAlertTime >= startTimeHour && adjustedAlertTime <= adjustedEndTime) {
+            inInterval = true;
+            diff = 0;
+          } else {
+            diff = Math.min(Math.abs(alert.alertTimeHour - startTimeHour), Math.abs(alert.alertTimeHour - endTimeHour));
+          }
+
+          let rejectedReason = 'Selected as best match (pending others)';
+          
+          if (diff <= 12) {
+              if (diff < minDiff) {
+                  // The previous best match is now rejected
+                  if (bestMatch) {
+                    const prevDiag = candidateDiagnostics.find(d => d.EventNumber === (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1));
+                    if (prevDiag) prevDiag.RejectedReason = `Diff ${prevDiag.TimeDifference}h > new minDiff ${diff.toFixed(2)}h`;
+                  }
+                  
+                  minDiff = diff;
+                  bestMatch = row;
+                  matchedIndex = i;
+              } else {
+                  rejectedReason = `Diff ${diff.toFixed(2)}h >= minDiff ${minDiff.toFixed(2)}h`;
+              }
+          } else {
+              rejectedReason = `Diff ${diff.toFixed(2)}h > 12h limit`;
+          }
+
+          candidateDiagnostics.push({
+            EventNumber: eventNo,
+            ActivityStartTime: startTimeHour.toFixed(2),
+            ActivityEndTime: endTimeHour.toFixed(2),
+            AlertTime: alert.alertTimeHour.toFixed(2),
+            TimeDifference: diff.toFixed(2),
+            InInterval: inInterval,
+            RejectedReason: rejectedReason
+          });
       }
     }
     
@@ -343,7 +395,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       Category: alert.normalizedCategory,
       Date: alertDateStr,
       CandidatesFound: candidatesFound,
-      SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None'
+      SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None',
+      CandidateDetails: candidateDiagnostics
     });
 
     if (bestMatch) {
@@ -423,9 +476,18 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   // --- MERGE DEBUG OUTPUT ---
   console.log(`Total Alerts = ${parsedAlerts.length}`);
   for (const diag of matchDiagnostics) {
-    console.log(`Alert Number: ${diag.AlertNumber} | Rig: ${diag.Rig} | Category: ${diag.Category} | Date: ${diag.Date} | Candidate Activities Found: ${diag.CandidatesFound} | Selected Activity: ${diag.SelectedActivity}`);
+    console.log(`\nAlert Number: ${diag.AlertNumber} | Rig: ${diag.Rig} | Category: ${diag.Category} | Date: ${diag.Date}`);
+    console.log(`Candidate Activities Found: ${diag.CandidatesFound}`);
+    console.log(`Selected Activity: ${diag.SelectedActivity}`);
+    
+    if (diag.CandidateDetails && diag.CandidateDetails.length > 0) {
+       console.log(`  Candidates:`);
+       for (const c of diag.CandidateDetails) {
+         console.log(`    - Event No: ${c.EventNumber} | Start: ${c.ActivityStartTime} | End: ${c.ActivityEndTime} | AlertTime: ${c.AlertTime} | Diff: ${c.TimeDifference}h | InInterval: ${c.InInterval} | Reason: ${c.RejectedReason}`);
+       }
+    }
   }
-  console.log(`Matched Alerts = ${recordsMerged}`);
+  console.log(`\nMatched Alerts = ${recordsMerged}`);
   console.log(`Merged Dataset Length = ${records.length}`);
   console.log(`First 10 rows of mergedEvents:`, JSON.stringify(records.slice(0, 10), null, 2));
 
