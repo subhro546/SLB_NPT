@@ -9,6 +9,7 @@ export interface ParseResult {
   normalizedCategoriesCount: number;
   recordsMerged: number;
   debugLog?: any;
+  TotalActivityRows?: number;
 }
 
 const OFFSHORE_RIG_COSTS: Record<string, number> = {
@@ -286,65 +287,67 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   const normalizedCats = new Set<string>();
   let recordsMerged = 0;
 
-  // STEP 1: Build the Events Dataset
-  // Create unique events grouped by Rig + Category + Depth + Date
-  const eventsMap = new Map<string, NPTRecord>();
+  // STEP 1: Filter valid activities (March 2026 onwards, Intervention Minor Codes)
+  const marchFirst = new Date('2026-03-01T00:00:00Z');
+  
+  const filteredActivities = validActivities.filter(row => {
+    let dateObj = row['_parsedDate'];
+    if (!dateObj || dateObj < marchFirst) return false;
+    
+    const rawCategory = String(getValue(row, 'minor', 'minorcode') || '');
+    const upperCat = rawCategory.toUpperCase();
+    return upperCat.startsWith('22') || upperCat.startsWith('8');
+  });
 
-  for (let i = 0; i < validActivities.length; i++) {
-    const row = validActivities[i];
+  const totalActivityRows = filteredActivities.length;
+
+  // STEP 2: Sort by Rig, Date, StartTime
+  filteredActivities.sort((a, b) => {
+    const rigA = normalizeRigName(String(getValue(a, 'rigname', 'rig', 'facility', 'platform') || ''));
+    const rigB = normalizeRigName(String(getValue(b, 'rigname', 'rig', 'facility', 'platform') || ''));
+    if (rigA !== rigB) return rigA.localeCompare(rigB);
+    
+    const dateA = a['_parsedDate'] ? a['_parsedDate'].getTime() : 0;
+    const dateB = b['_parsedDate'] ? b['_parsedDate'].getTime() : 0;
+    if (dateA !== dateB) return dateA - dateB;
+
+    const startA = parseTime(getValue(a, 'starttime', 'from', 'time'));
+    const startB = parseTime(getValue(b, 'starttime', 'from', 'time'));
+    return startA - startB;
+  });
+
+  // STEP 3: Cluster sequential events
+  const records: NPTRecord[] = [];
+  let activeEvent: NPTRecord | null = null;
+  let activeDepthSum = 0;
+
+  const formatTimeStr = (decimalHour: number) => {
+    const h = Math.floor(decimalHour);
+    const m = Math.round((decimalHour - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
+  for (let i = 0; i < filteredActivities.length; i++) {
+    const row = filteredActivities[i];
     
     const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
     const normalizedRig = normalizeRigName(rawRigName);
-    
     const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
     const normalizedCat = normalizeCategoryByCode(rawCategory);
-    
     const depth = Number(getValue(row, 'depth')) || 0;
-    
-    let dateObj = row['_parsedDate'];
-    const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : 'Unknown';
+    const dateObjStr = row['_parsedDate'] ? format(row['_parsedDate'], 'yyyy-MM-dd') : 'Unknown';
+    let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+    let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+    let duration = Number(getValue(row, 'hours', 'duration')) || 0;
+    if (duration === 0 && endTimeHour > startTimeHour) duration = endTimeHour - startTimeHour;
     
     originalCats.add(rawCategory);
     normalizedCats.add(normalizedCat);
 
-    const compositeKey = `${normalizedRig}_${normalizedCat}_${depth}_${dateObjStr}`;
-    
-    let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-    let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
-    let duration = Number(getValue(row, 'hours', 'duration')) || 0;
-    if (duration === 0 && endTimeHour > startTimeHour) {
-      duration = endTimeHour - startTimeHour;
-    }
-
-    if (eventsMap.has(compositeKey)) {
-      const existing = eventsMap.get(compositeKey)!;
-      existing.Hours += duration;
-      existing.Duration = existing.Hours;
-      existing.CostImpact = existing.Hours * (existing.CostUSDPerDay / 24);
-      
-      // Expand Start/End time window
-      const exStart = parseTime(existing.StartTime || '00:00');
-      const exEnd = parseTime(existing.EndTime || '00:00');
-      
-      if (startTimeHour < exStart) {
-        existing.StartTime = `${Math.floor(startTimeHour).toString().padStart(2, '0')}:${Math.round((startTimeHour % 1) * 60).toString().padStart(2, '0')}`;
-      }
-      if (endTimeHour > exEnd) {
-        existing.EndTime = `${Math.floor(endTimeHour).toString().padStart(2, '0')}:${Math.round((endTimeHour % 1) * 60).toString().padStart(2, '0')}`;
-      }
-      
-      existing.GroupedEventCount = (existing.GroupedEventCount || 1) + 1;
-    } else {
+    if (!activeEvent) {
       let rigCost = getRigCost(rawRigName);
-      
-      const formatTimeStr = (decimalHour: number) => {
-        const h = Math.floor(decimalHour);
-        const m = Math.round((decimalHour - h) * 60);
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      };
-
-      const newEvent: NPTRecord = {
-        EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || i + 1,
+      activeEvent = {
+        EventNo: records.length + 1,
         RigName: rawRigName,
         WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
         WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
@@ -361,20 +364,79 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
         InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
         MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
         Month: dateObjStr,
-        
         NormalizedCategory: normalizedCat,
         Duration: duration,
         StartTime: formatTimeStr(startTimeHour),
         EndTime: formatTimeStr(endTimeHour),
-        
         HasIntervention: false,
         GroupedEventCount: 1,
+        OriginalRowCount: 1,
       };
-      eventsMap.set(compositeKey, newEvent);
+      activeDepthSum = depth;
+    } else {
+      const activeEndHour = parseTime(activeEvent.EndTime || '00:00');
+      const timeGap = startTimeHour - activeEndHour;
+      const avgDepth = activeEvent.OriginalRowCount ? (activeDepthSum / activeEvent.OriginalRowCount) : depth;
+      const depthDiff = Math.abs(depth - avgDepth);
+      
+      if (
+        normalizeRigName(activeEvent.RigName) === normalizedRig &&
+        activeEvent.Category === normalizedCat &&
+        activeEvent.Month === dateObjStr &&
+        timeGap <= 1 && timeGap >= -12 && // Allow some overlap (e.g. -12 for next day overlap, but usually it's positive)
+        depthDiff <= 50
+      ) {
+        // Merge
+        activeEvent.Hours += duration;
+        activeEvent.Duration = activeEvent.Hours;
+        activeEvent.CostImpact = activeEvent.Hours * (activeEvent.CostUSDPerDay / 24);
+        activeEvent.OriginalRowCount = (activeEvent.OriginalRowCount || 1) + 1;
+        activeEvent.GroupedEventCount = activeEvent.OriginalRowCount;
+        activeDepthSum += depth;
+        activeEvent.Depth = activeDepthSum / activeEvent.OriginalRowCount; // updating average depth
+        
+        if (endTimeHour > activeEndHour) {
+          activeEvent.EndTime = formatTimeStr(endTimeHour);
+        }
+      } else {
+        // Push and start new
+        records.push(activeEvent);
+        
+        let rigCost = getRigCost(rawRigName);
+        activeEvent = {
+          EventNo: records.length + 1,
+          RigName: rawRigName,
+          WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
+          WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
+          CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
+          CDE: String(getValue(row, 'cde') || ''),
+          Depth: depth,
+          OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
+          Category: normalizedCat,
+          Hours: duration,
+          CostUSDPerDay: rigCost,
+          CostImpact: duration * (rigCost / 24),
+          TimeSaved: 0,
+          CostSaved: 0,
+          InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
+          MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
+          Month: dateObjStr,
+          NormalizedCategory: normalizedCat,
+          Duration: duration,
+          StartTime: formatTimeStr(startTimeHour),
+          EndTime: formatTimeStr(endTimeHour),
+          HasIntervention: false,
+          GroupedEventCount: 1,
+          OriginalRowCount: 1,
+        };
+        activeDepthSum = depth;
+      }
     }
   }
-
-  const records = Array.from(eventsMap.values());
+  
+  if (activeEvent) {
+    records.push(activeEvent);
+  }
 
   // STEP 2: Secondary Matching with Alert Tracker
   const matchDiagnostics: any[] = [];
@@ -456,6 +518,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     originalCategoriesCount: originalCats.size,
     normalizedCategoriesCount: normalizedCats.size,
     recordsMerged,
-    debugLog
+    debugLog,
+    TotalActivityRows: totalActivityRows
   };
 }

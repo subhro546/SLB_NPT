@@ -13,7 +13,8 @@ import {
   LineChart,
   Crosshair,
   Upload,
-  BrainCircuit
+  BrainCircuit,
+  Bug
 } from "lucide-react"
 
 export const navigation = [
@@ -24,6 +25,7 @@ export const navigation = [
   { name: 'AI Decision Intelligence', href: '/ai-decision-intelligence', icon: BrainCircuit },
   { name: 'Data Explorer', href: '/data-explorer', icon: Database },
   { name: 'Data Ingestion', href: '/upload', icon: Upload },
+  { name: 'Debug: Events', href: '/debug-events', icon: Bug },
 ]
 
 export function Sidebar() {

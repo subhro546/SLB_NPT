@@ -25,6 +25,7 @@ export interface NPTRecord {
   Month?: string;
   HasIntervention?: boolean;
   GroupedEventCount?: number;
+  OriginalRowCount?: number;
   // Dual File Upload Fields
   AlertNumber?: string;
   AlertTime?: string;
@@ -44,6 +45,7 @@ export interface DataQualityMetrics {
   originalCategoriesCount: number;
   normalizedCategoriesCount: number;
   recordsMerged: number;
+  TotalActivityRows?: number;
 }
 
 export interface Dataset {
