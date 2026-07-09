@@ -97,7 +97,30 @@ function parseExcel(data: string | ArrayBuffer): any[] {
   const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json(worksheet);
+  
+  // Get raw array of arrays to find the actual header row
+  const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  
+  let headerRowIndex = 0;
+  for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+    const row = rawRows[i] || [];
+    const rowStr = row.map(cell => String(cell).toLowerCase()).join(' ');
+    
+    // Check if this row looks like the header row
+    if (
+      rowStr.includes('event no') || 
+      rowStr.includes('rig name') || 
+      rowStr.includes('wellid') || 
+      rowStr.includes('alert no') || 
+      rowStr.includes('cde') ||
+      rowStr.includes('observation')
+    ) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  
+  return XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
 }
 
 // Function to convert time string (e.g. "14:30:00" or Excel fraction) to hours decimal
