@@ -68,9 +68,9 @@ function getRigCost(rigName: string): number {
   return 0; // Default if not found
 }
 
-function normalizeAlertCategory(cde: string): string {
-  if (!cde) return "Unknown";
-  const c = cde.toUpperCase().trim();
+function normalizeCategoryByCode(code: string): string {
+  if (!code) return "Unknown";
+  const c = String(code).toUpperCase().trim();
   if (c.startsWith("22A")) return "Influx";
   if (c.startsWith("22B")) return "Mud Loss";
   if (c.startsWith("22C")) return "Tight Pull";
@@ -79,19 +79,6 @@ function normalizeAlertCategory(cde: string): string {
   if (c.startsWith("22G")) return "Downhole Failure";
   if (c.startsWith("8")) return "Equipment Failure";
   return "Unknown";
-}
-
-function normalizeActivityCategory(rawCat: string): string {
-  const cat = legacyNormalizeCategory(rawCat);
-  if (cat === "Mud Loss" || cat === "Loss Control") return "Mud Loss";
-  if (cat === "Tight Pull" || cat === "Held Ups") return "Tight Pull";
-  if (cat === "String Stuck" || cat === "Stuck Pipe" || cat === "Pack Off") return "String Stuck";
-  if (cat === "String Failure") return "String Failure";
-  if (cat === "Downhole Failure") return "Downhole Failure";
-  if (cat.includes("Equipment") || cat.includes("Tool Failure")) return "Equipment Failure";
-  if (cat.includes("Influx") || cat.includes("Kick")) return "Influx";
-  
-  return cat; // fallback
 }
 
 function normalizeKeys(obj: any): any {
@@ -264,7 +251,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       alertNumber: String(getValue(row, 'alertno', 'alertnumber') || ''),
       observation: String(getValue(row, 'observation') || ''),
       recommendation: String(getValue(row, 'recommendation') || ''),
-      normalizedCategory: normalizeAlertCategory(rawCde)
+      normalizedCategory: normalizeCategoryByCode(rawCde)
     };
   });
 
@@ -275,11 +262,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     activitiesAfterFilter: validActivities.length,
     uniqueRigsActivities: Array.from(new Set(validActivities.map((r: any) => normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown'))))),
     uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedRig))),
-    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown'))))),
+    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown'))))),
     uniqueCategoriesAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedCategory))),
     first10Activities: validActivities.slice(0, 10).map((r: any) => ({
-      originalCategoryValue: getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code'),
-      normalizedCategory: normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown')),
+      originalCategoryValue: getValue(r, 'minorcode'),
+      normalizedCategory: normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown')),
       originalRigValue: getValue(r, 'rigname', 'rig', 'facility', 'platform'),
       normalizedRig: normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown')),
       originalDateValue: getValue(r, 'date'),
@@ -304,7 +291,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       
       for (const act of validActivities) {
         const actRig = String(getValue(act, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-        const actCat = normalizeActivityCategory(String(getValue(act, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown'));
+        const actCat = normalizeCategoryByCode(String(getValue(act, 'minorcode') || 'Unknown'));
         const actDate = act['_parsedDate'];
         
         let matchRig = alert.normalizedRig === normalizeRigName(actRig);
@@ -341,8 +328,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let recordsMerged = 0;
 
   const records: NPTRecord[] = validActivities.map((row: any, index) => {
-    const rawCategory = String(getValue(row, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown');
-    const normalizedCat = normalizeActivityCategory(rawCategory);
+    const rawCategory = String(getValue(row, 'minorcode') || 'Unknown');
+    const normalizedCat = normalizeCategoryByCode(rawCategory);
 
     originalCats.add(rawCategory);
     normalizedCats.add(normalizedCat);
