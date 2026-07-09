@@ -71,13 +71,15 @@ function getRigCost(rigName: string): number {
 function normalizeCategoryByCode(code: string): string {
   if (!code) return "Unknown";
   const c = String(code).toUpperCase().trim();
-  if (c.startsWith("22A")) return "Influx";
-  if (c.startsWith("22B")) return "Mud Loss";
-  if (c.startsWith("22C")) return "Tight Pull";
-  if (c.startsWith("22E")) return "String Stuck";
-  if (c.startsWith("22F")) return "String Failure";
-  if (c.startsWith("22G")) return "Downhole Failure";
-  if (c.startsWith("8")) return "Equipment Failure";
+  
+  if (c.startsWith("22A") || c === "INFLUX") return "Influx";
+  if (c.startsWith("22B") || c === "LOSS CONTROL" || c === "MUD LOSS") return "Mud Loss";
+  if (c.startsWith("22C") || c === "TIGHT PULL" || c === "HELD UPS") return "Tight Pull";
+  if (c.startsWith("22E") || c === "STRING STUCK") return "String Stuck";
+  if (c.startsWith("22F") || c === "STRING FAILURE") return "String Failure";
+  if (c.startsWith("22G") || c === "DOWNHOLE FAILURE") return "Downhole Failure";
+  if (c.startsWith("8") || c === "EQUIPMENT FAILURE") return "Equipment Failure";
+  
   return "Unknown";
 }
 
@@ -264,19 +266,19 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedRig))),
     uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown'))))),
     uniqueCategoriesAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedCategory))),
-    first10Activities: validActivities.slice(0, 10).map((r: any) => ({
-      originalCategoryValue: getValue(r, 'minorcode'),
+    first20Activities: validActivities.slice(0, 20).map((r: any) => ({
+      originalMinorCode: getValue(r, 'minorcode'),
       normalizedCategory: normalizeCategoryByCode(String(getValue(r, 'minorcode') || 'Unknown')),
       originalRigValue: getValue(r, 'rigname', 'rig', 'facility', 'platform'),
       normalizedRig: normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown')),
       originalDateValue: getValue(r, 'date'),
       parsedDate: r['_parsedDate'] ? format(r['_parsedDate'], 'yyyy-MM-dd') : 'Invalid'
     })),
-    first10Alerts: parsedAlerts.slice(0, 10).map((a: any) => ({
+    first20Alerts: parsedAlerts.slice(0, 20).map((a: any) => ({
+      originalCategory: a.rawCde,
+      normalizedCategory: a.normalizedCategory,
       originalRigValue: a.rawRig,
       normalizedRig: a.normalizedRig,
-      originalCategoryValue: a.rawCde,
-      normalizedCategory: a.normalizedCategory,
       originalDateValue: a.rawDate,
       parsedDate: a.date ? format(a.date, 'yyyy-MM-dd') : 'Invalid'
     })),
@@ -446,6 +448,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
 
   if (recordsMerged === 0) {
     console.warn("0 records merged. Returning debugLog to UI.");
+    throw new Error(`DEBUG HELP: 0 records merged.\n\nFirst 20 Activities:\n${JSON.stringify(debugLog.first20Activities, null, 2)}\n\nFirst 20 Alerts:\n${JSON.stringify(debugLog.first20Alerts, null, 2)}`);
   }
 
   return {
