@@ -118,30 +118,69 @@ function parseTime(timeVal: any): number {
   return 0;
 }
 
+function parseDateValue(dateVal: any, rowIndex: number): Date | null {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date) return dateVal;
+  if (typeof dateVal === 'number') {
+     // Excel serial date handling if needed, but cellDates: true should handle it
+     return null;
+  }
+  if (typeof dateVal === 'string') {
+    const parts = dateVal.split('-');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const monthStr = parts[1];
+      const year = parseInt(parts[2], 10);
+      
+      const monthMap: Record<string, number> = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+      };
+      
+      const monthKey = monthStr.length >= 3 ? monthStr.substring(0, 3).charAt(0).toUpperCase() + monthStr.substring(0, 3).slice(1).toLowerCase() : "";
+      const month = monthMap[monthKey];
+      
+      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+        // Create date (using local timezone to match other dates if needed, or UTC)
+        return new Date(year, month, day); 
+      }
+    }
+    
+    // Fallback standard parse
+    const fallback = new Date(dateVal);
+    if (!isNaN(fallback.getTime())) {
+       return fallback;
+    }
+  }
+  
+  console.warn(`Row ${rowIndex}: Failed to parse date value: ${dateVal}`);
+  return null;
+}
+
 export function processDualFiles(activitiesData: string | ArrayBuffer, alertsData: string | ArrayBuffer): ParseResult {
   const rawActivities = parseExcel(activitiesData);
   const rawAlerts = parseExcel(alertsData);
 
   // Filter Activities: Date >= 2026-03-01
-  const cutoffDate = new Date("2026-03-01T00:00:00Z");
+  const cutoffDate = new Date(2026, 2, 1); // March 1, 2026
   
-  const validActivities = rawActivities.filter((row: any) => {
+  const validActivities = rawActivities.filter((row: any, index: number) => {
     if (!row['Event No'] && !row['WellID'] && !row['Rig Name']) return false;
     
-    let rowDate = null;
-    if (row['Date']) {
-      rowDate = new Date(row['Date']);
+    const rowDate = parseDateValue(row['Date'], index + 2); // Excel rows are 1-indexed, header is row 1
+    
+    if (!rowDate) {
+      return false; // Skip without throwing, already logged warning
     }
-    if (!rowDate || isNaN(rowDate.getTime())) return false;
+    
+    // Store parsed date back so we don't parse again
+    row['_parsedDate'] = rowDate;
     
     return rowDate >= cutoffDate;
   });
 
-  const parsedAlerts = rawAlerts.map((row: any) => {
-    let rowDate = null;
-    if (row['Date']) {
-      rowDate = new Date(row['Date']);
-    }
+  const parsedAlerts = rawAlerts.map((row: any, index: number) => {
+    const rowDate = parseDateValue(row['Date'], index + 2);
     
     return {
       rig: String(row['Rig'] || row['Rig Name'] || ''),
@@ -169,7 +208,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       recordsMerged++;
     }
 
-    let dateObj = new Date(row['Date']);
+    let dateObj = row['_parsedDate'];
     let monthStr = format(dateObj, 'yyyy-MM-dd');
     
     let startTimeHour = parseTime(row['Start Time'] || row['From']);
