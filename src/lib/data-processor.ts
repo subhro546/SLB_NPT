@@ -282,59 +282,32 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     alertAnalysis: []
   };
 
-  let alertCount = 0;
-  for (const alert of parsedAlerts) {
-    if (alertCount < 20) {
-      let candidatesBeforeTime = 0;
-      let reasons = { rigMismatch: 0, catMismatch: 0, dateMismatch: 0 };
-      
-      for (const act of validActivities) {
-        const actRig = String(getValue(act, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-        const actCat = normalizeCategoryByCode(String(getValue(act, 'minor', 'minorcode') || 'Unknown'));
-        const actDate = act['_parsedDate'];
-        
-        let matchRig = alert.normalizedRig === normalizeRigName(actRig);
-        let matchCat = alert.normalizedCategory === actCat;
-        
-        const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
-        const actDateStr = actDate ? format(actDate, 'yyyy-MM-dd') : null;
-        let matchDate = alertDateStr && actDateStr && alertDateStr === actDateStr;
-        
-        if (!matchRig) reasons.rigMismatch++;
-        if (!matchCat) reasons.catMismatch++;
-        if (!matchDate) reasons.dateMismatch++;
-        
-        if (matchRig && matchCat && matchDate) {
-          candidatesBeforeTime++;
-        }
-      }
-      
-      debugLog.alertAnalysis.push({
-        rig: alert.normalizedRig,
-        category: alert.normalizedCategory,
-        date: alert.date ? format(alert.date, 'yyyy-MM-dd') : 'Invalid',
-        candidatesFound: candidatesBeforeTime,
-        reasonsIfNone: candidatesBeforeTime === 0 ? reasons : null
-      });
-    }
-    alertCount++;
-  }
-  console.log("DEBUG LOG:", debugLog);
-  // --- END DEBUGGING LOGIC ---
-
+  // --- BEGIN MERGE LOGIC AND DEBUGGING ---
   const originalCats = new Set<string>();
   const normalizedCats = new Set<string>();
   let recordsMerged = 0;
 
   const records: NPTRecord[] = [];
+  const matchDiagnostics: any[] = [];
 
   for (const alert of parsedAlerts) {
     let bestMatch: any = null;
     let minDiff = Infinity;
     let matchedIndex = -1;
+    let candidatesFound = 0;
 
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
-    if (!alertDateStr) continue;
+    if (!alertDateStr) {
+      matchDiagnostics.push({
+        AlertNumber: alert.alertNumber,
+        Rig: alert.normalizedRig,
+        Category: alert.normalizedCategory,
+        Date: 'Invalid',
+        CandidatesFound: 0,
+        SelectedActivity: 'None'
+      });
+      continue;
+    }
 
     for (let i = 0; i < validActivities.length; i++) {
       const row = validActivities[i];
@@ -352,6 +325,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           alert.normalizedCategory === normalizedCat &&
           alertDateStr === dateObjStr) {
           
+          candidatesFound++;
+          
           let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
           const diff = Math.abs(alert.alertTimeHour - startTimeHour);
           if (diff <= 4 && diff < minDiff) {
@@ -361,6 +336,15 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           }
       }
     }
+    
+    matchDiagnostics.push({
+      AlertNumber: alert.alertNumber,
+      Rig: alert.normalizedRig,
+      Category: alert.normalizedCategory,
+      Date: alertDateStr,
+      CandidatesFound: candidatesFound,
+      SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None'
+    });
 
     if (bestMatch) {
       recordsMerged++;
@@ -435,6 +419,17 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       });
     }
   }
+
+  // --- MERGE DEBUG OUTPUT ---
+  console.log(`Total Alerts = ${parsedAlerts.length}`);
+  for (const diag of matchDiagnostics) {
+    console.log(`Alert Number: ${diag.AlertNumber} | Rig: ${diag.Rig} | Category: ${diag.Category} | Date: ${diag.Date} | Candidate Activities Found: ${diag.CandidatesFound} | Selected Activity: ${diag.SelectedActivity}`);
+  }
+  console.log(`Matched Alerts = ${recordsMerged}`);
+  console.log(`Merged Dataset Length = ${records.length}`);
+  console.log(`First 10 rows of mergedEvents:`, JSON.stringify(records.slice(0, 10), null, 2));
+
+  debugLog.alertAnalysis = matchDiagnostics;
 
   if (records.length === 0) {
     if (totalRowsChecked === 0) {
