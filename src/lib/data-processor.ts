@@ -326,109 +326,115 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   const normalizedCats = new Set<string>();
   let recordsMerged = 0;
 
-  const records: NPTRecord[] = validActivities.map((row: any, index) => {
-    const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
-    const normalizedCat = normalizeCategoryByCode(rawCategory);
+  const records: NPTRecord[] = [];
 
-    originalCats.add(rawCategory);
-    normalizedCats.add(normalizedCat);
-    if (rawCategory !== normalizedCat) {
-      recordsMerged++;
-    }
-
-    let dateObj = row['_parsedDate'];
-    let monthStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : 'Unknown';
-    const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
-    
-    let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
-    let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
-    let duration = Number(getValue(row, 'hours', 'duration')) || 0;
-    
-    if (duration === 0 && endTimeHour > startTimeHour) {
-       duration = endTimeHour - startTimeHour;
-    }
-
-    const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
-    const normalizedRig = normalizeRigName(rawRigName);
-
-    // Matching logic
-    let bestMatch = null;
+  for (const alert of parsedAlerts) {
+    let bestMatch: any = null;
     let minDiff = Infinity;
-    
-    for (const alert of parsedAlerts) {
-      const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
-      if (alert.normalizedRig === normalizedRig && 
+    let matchedIndex = -1;
+
+    const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
+    if (!alertDateStr) continue;
+
+    for (let i = 0; i < validActivities.length; i++) {
+      const row = validActivities[i];
+
+      const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
+      const normalizedRig = normalizeRigName(rawRigName);
+
+      const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
+      const normalizedCat = normalizeCategoryByCode(rawCategory);
+
+      let dateObj = row['_parsedDate'];
+      const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
+
+      if (alert.normalizedRig === normalizedRig &&
           alert.normalizedCategory === normalizedCat &&
-          alertDateStr && alertDateStr === dateObjStr) {
-            
-            // Need timestamp difference logic
-            // Use start time or end time or midpoint? We can check difference to startTimeHour
-            const diff = Math.abs(alert.alertTimeHour - startTimeHour);
-            if (diff <= 4 && diff < minDiff) {
+          alertDateStr === dateObjStr) {
+          
+          let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+          const diff = Math.abs(alert.alertTimeHour - startTimeHour);
+          if (diff <= 4 && diff < minDiff) {
               minDiff = diff;
-              bestMatch = alert;
-            }
+              bestMatch = row;
+              matchedIndex = i;
+          }
       }
     }
 
-    let matchConfidence = "No Match";
-    if (minDiff <= 1) matchConfidence = "100%";
-    else if (minDiff <= 2) matchConfidence = "95%";
-    else if (minDiff <= 3) matchConfidence = "90%";
-    else if (minDiff <= 4) matchConfidence = "85%";
-
-    let improvementFactor = 0;
-    let timeSaved = 0;
-    let costSaved = 0;
-    let rigCost = getRigCost(rawRigName);
-
     if (bestMatch) {
-      // 20% to 50%
-      improvementFactor = 0.20 + (Math.random() * 0.30);
-      timeSaved = duration * improvementFactor;
-      costSaved = (timeSaved / 24) * rigCost;
-    }
-    
-    // Just format string times for display
-    const formatTimeStr = (decimalHour: number) => {
-      const h = Math.floor(decimalHour);
-      const m = Math.round((decimalHour - h) * 60);
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    };
-
-    return {
-      EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || index + 1,
-      RigName: rawRigName,
-      WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
-      WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
-      CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
-      CDE: bestMatch ? bestMatch.cde : String(getValue(row, 'cde') || ''),
-      Depth: Number(getValue(row, 'depth')) || 0,
-      OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
-      Category: normalizedCat,
-      Hours: duration,
-      CostUSDPerDay: rigCost, // using Rig Cost calculated for all logic
-      CostImpact: duration * (rigCost / 24),
-      TimeSaved: timeSaved,
-      CostSaved: costSaved,
-      InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
-      MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
-      Month: monthStr,
+      recordsMerged++;
+      const row = bestMatch;
       
-      AlertNumber: bestMatch ? bestMatch.alertNumber : '',
-      AlertTime: bestMatch ? formatTimeStr(bestMatch.alertTimeHour) : '',
-      Observation: bestMatch ? bestMatch.observation : '',
-      Recommendation: bestMatch ? bestMatch.recommendation : '',
-      TimeDifference: bestMatch ? minDiff : undefined,
-      MatchConfidence: matchConfidence,
-      ImprovementFactor: bestMatch ? improvementFactor : undefined,
-      RigCost: rigCost,
-      NormalizedCategory: normalizedCat,
-      Duration: duration,
-      StartTime: formatTimeStr(startTimeHour),
-      EndTime: formatTimeStr(endTimeHour)
-    };
-  });
+      const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
+      const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
+      const normalizedCat = normalizeCategoryByCode(rawCategory);
+      
+      originalCats.add(rawCategory);
+      normalizedCats.add(normalizedCat);
+
+      let dateObj = row['_parsedDate'];
+      let monthStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : 'Unknown';
+
+      let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+      let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+      let duration = Number(getValue(row, 'hours', 'duration')) || 0;
+
+      if (duration === 0 && endTimeHour > startTimeHour) {
+         duration = endTimeHour - startTimeHour;
+      }
+
+      let matchConfidence = "No Match";
+      if (minDiff <= 1) matchConfidence = "100%";
+      else if (minDiff <= 2) matchConfidence = "95%";
+      else if (minDiff <= 3) matchConfidence = "90%";
+      else if (minDiff <= 4) matchConfidence = "85%";
+
+      let rigCost = getRigCost(rawRigName);
+      let improvementFactor = 0.20 + (Math.random() * 0.30);
+      let timeSaved = duration * improvementFactor;
+      let costSaved = (timeSaved / 24) * rigCost;
+
+      const formatTimeStr = (decimalHour: number) => {
+        const h = Math.floor(decimalHour);
+        const m = Math.round((decimalHour - h) * 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      };
+
+      records.push({
+        EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || matchedIndex + 1,
+        RigName: rawRigName,
+        WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
+        WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
+        CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
+        CDE: alert.cde,
+        Depth: Number(getValue(row, 'depth')) || 0,
+        OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
+        Category: normalizedCat,
+        Hours: duration,
+        CostUSDPerDay: rigCost,
+        CostImpact: duration * (rigCost / 24),
+        TimeSaved: timeSaved,
+        CostSaved: costSaved,
+        InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
+        MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
+        Month: monthStr,
+        
+        AlertNumber: alert.alertNumber,
+        AlertTime: formatTimeStr(alert.alertTimeHour),
+        Observation: alert.observation,
+        Recommendation: alert.recommendation,
+        TimeDifference: minDiff,
+        MatchConfidence: matchConfidence,
+        ImprovementFactor: improvementFactor,
+        RigCost: rigCost,
+        NormalizedCategory: normalizedCat,
+        Duration: duration,
+        StartTime: formatTimeStr(startTimeHour),
+        EndTime: formatTimeStr(endTimeHour)
+      });
+    }
+  }
 
   if (records.length === 0) {
     if (totalRowsChecked === 0) {
