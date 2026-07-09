@@ -23,6 +23,19 @@ export interface NPTRecord {
   InchargeName?: string;
   MonitoringEngineer?: string;
   Month?: string;
+  // Dual File Upload Fields
+  AlertNumber?: string;
+  AlertTime?: string;
+  Observation?: string;
+  Recommendation?: string;
+  TimeDifference?: number;
+  MatchConfidence?: string;
+  ImprovementFactor?: number;
+  RigCost?: number;
+  NormalizedCategory?: string;
+  Duration?: number;
+  StartTime?: string;
+  EndTime?: string;
 }
 
 export interface DataQualityMetrics {

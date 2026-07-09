@@ -10,134 +10,96 @@ import { useAppStore, NPTRecord, Dataset } from "@/store/useAppStore"
 import { format } from "date-fns"
 
 import { normalizeCategory } from "@/lib/normalize"
+import { processDualFiles } from "@/lib/data-processor"
 
 export default function UploadPage() {
   const { addDataset, datasets, activeDatasetId, setActiveDataset } = useAppStore()
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const [activitiesFile, setActivitiesFile] = useState<File | null>(null);
+  const [alertsFile, setAlertsFile] = useState<File | null>(null);
 
-  const processExcel = (file: File) => {
-    setIsParsing(true)
-    setError(null)
+  const handleProcessData = () => {
+    if (!activitiesFile || !alertsFile) {
+      setError("Please select both files.");
+      return;
+    }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result
-        const workbook = XLSX.read(data, { type: 'binary', cellDates: true })
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-        const rawJson = XLSX.utils.sheet_to_json(worksheet)
+    setIsParsing(true);
+    setError(null);
 
-        // Filter out empty rows that Excel sometimes pads out to 1,048,576
-        const validJson = rawJson.filter((row: any) => {
-          return row['Event No'] || row['WellID'] || row['Rig Name'];
-        });
+    const reader1 = new FileReader();
+    const reader2 = new FileReader();
 
-        const originalCats = new Set<string>();
-        const normalizedCats = new Set<string>();
-        let recordsMerged = 0;
+    let actData: any = null;
+    let alertData: any = null;
 
-        // Validation and Transformation
-        const records: NPTRecord[] = validJson.map((row: any, index) => {
-          const hours = Number(row['Hours']) || 0;
-          const costUSDPerDay = Number(row['Cost USD/Day']) || 0;
-
-          const rawCategory = String(row['Category'] || 'Unknown');
-          const normalizedCat = normalizeCategory(rawCategory);
-
-          let finalTimeSaved = Number(row['Time Saved']) || 0;
-          let finalCostSaved = Number(row['Cost Saved']) || 0;
-
-          if (normalizedCat === "Tool Failure" || normalizedCat === "Equipment/Tool Failure" || normalizedCat === "Equipment Failure") {
-            finalTimeSaved = 0;
-            finalCostSaved = 0;
-          } else if (finalCostSaved === 0 && finalTimeSaved > 0) {
-            finalCostSaved = finalTimeSaved * (costUSDPerDay / 24);
-          }
-
-          originalCats.add(rawCategory);
-          normalizedCats.add(normalizedCat);
-          if (rawCategory !== normalizedCat) {
-            recordsMerged++;
-          }
-
-          // Date extraction to Month
-          let monthStr = 'Unknown';
-          if (row['Date']) {
-            const dateObj = new Date(row['Date']);
-            if (!isNaN(dateObj.getTime())) {
-              monthStr = format(dateObj, 'MMM yyyy'); // e.g. "Jan 2024"
-            } else if (typeof row['Date'] === 'string') {
-              monthStr = row['Date'].substring(0, 7); // Fallback for raw string
+    const finalize = () => {
+      if (actData && alertData) {
+        try {
+          const result = processDualFiles(actData, alertData);
+          
+          const newDataset: Dataset = {
+            id: crypto.randomUUID(),
+            name: `${activitiesFile.name} & ${alertsFile.name}`,
+            uploadTimestamp: new Date().toISOString(),
+            records: result.records,
+            dataQuality: {
+              originalCategoriesCount: result.originalCategoriesCount,
+              normalizedCategoriesCount: result.normalizedCategoriesCount,
+              recordsMerged: result.recordsMerged
             }
-          }
+          };
 
-          return {
-            EventNo: Number(row['Event No']) || index + 1,
-            RigName: String(row['Rig Name'] || 'Unknown'),
-            WellID: String(row['WellID'] || 'Unknown'),
-            WellCategory: String(row['Well Category'] || 'Unknown'),
-            CompanyCode: String(row['Company Code'] || 'Unknown'),
-            CDE: String(row['CDE'] || ''),
-            Depth: Number(row['Depth']) || 0,
-            OnshoreOffshore: String(row['Onshore/Offshore'] || 'Unknown'),
-            Category: normalizedCat,
-            Hours: hours,
-            TimeSaved: finalTimeSaved,
-            CostUSDPerDay: costUSDPerDay,
-            CostImpact: hours * (costUSDPerDay / 24),
-            CostSaved: finalCostSaved,
-            InchargeName: String(row['Incharge Name'] || 'Unknown'),
-            MonitoringEngineer: String(row['Monitoring Engineer'] || 'Unknown'),
-            Month: monthStr
-          }
-        })
-
-        if (records.length === 0) {
-          throw new Error("No valid data found in the uploaded file.")
+          addDataset(newDataset);
+          setActivitiesFile(null);
+          setAlertsFile(null);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'An error occurred while parsing the files');
+        } finally {
+          setIsParsing(false);
         }
-
-        const newDataset: Dataset = {
-          id: crypto.randomUUID(),
-          name: file.name,
-          uploadTimestamp: new Date().toISOString(),
-          records,
-          dataQuality: {
-            originalCategoriesCount: originalCats.size,
-            normalizedCategoriesCount: normalizedCats.size,
-            recordsMerged
-          }
-        }
-
-        addDataset(newDataset)
-        setIsParsing(false)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred while parsing the file')
-        setIsParsing(false)
       }
-    }
+    };
 
-    reader.onerror = () => {
-      setError("Failed to read the file")
-      setIsParsing(false)
-    }
+    reader1.onload = (e) => {
+      actData = e.target?.result;
+      finalize();
+    };
+    reader2.onload = (e) => {
+      alertData = e.target?.result;
+      finalize();
+    };
 
-    reader.readAsBinaryString(file)
-  }
+    reader1.onerror = () => { setError("Failed to read Activities file"); setIsParsing(false); };
+    reader2.onerror = () => { setError("Failed to read Alerts file"); setIsParsing(false); };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    reader1.readAsBinaryString(activitiesFile);
+    reader2.readAsBinaryString(alertsFile);
+  };
+
+  const { getRootProps: getActProps, getInputProps: getActInputProps, isDragActive: isActActive } = useDropzone({
     onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        processExcel(acceptedFiles[0])
-      }
+      if (acceptedFiles.length > 0) setActivitiesFile(acceptedFiles[0]);
     },
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'application/vnd.ms-excel': ['.xls']
     },
     multiple: false
-  })
+  });
+
+  const { getRootProps: getAlertProps, getInputProps: getAlertInputProps, isDragActive: isAlertActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) setAlertsFile(acceptedFiles[0]);
+    },
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls']
+    },
+    multiple: false
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -158,21 +120,57 @@ export default function UploadPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors
-                  ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-accent/50'}`}
-              >
-                <input {...getInputProps()} />
-                <div className="flex justify-center mb-4">
-                  <div className="bg-primary/10 p-4 rounded-full">
-                    <UploadIcon className="h-8 w-8 text-primary" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Activities File Upload */}
+                <div
+                  {...getActProps()}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${isActActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-accent/50'}`}
+                >
+                  <input {...getActInputProps()} />
+                  <div className="flex justify-center mb-2">
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <FileSpreadsheet className="h-6 w-6 text-primary" />
+                    </div>
                   </div>
+                  <h3 className="text-sm font-semibold mb-1">Upload Time & Activities</h3>
+                  <p className="text-xs text-muted-foreground mb-3">(.xls or .xlsx)</p>
+                  {activitiesFile ? (
+                    <div className="text-sm text-emerald-600 font-medium break-all">{activitiesFile.name}</div>
+                  ) : (
+                    <Button variant="secondary" size="sm" disabled={isParsing}>Select File</Button>
+                  )}
                 </div>
-                <h3 className="text-lg font-semibold mb-1">Click or drag file to this area to upload</h3>
-                <p className="text-sm text-muted-foreground mb-4">Support for a single or bulk upload. Strictly prohibit from uploading company data or other band files.</p>
-                <Button variant="secondary" disabled={isParsing}>
-                  {isParsing ? 'Parsing Data...' : 'Select File'}
+
+                {/* Alerts File Upload */}
+                <div
+                  {...getAlertProps()}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${isAlertActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-accent/50'}`}
+                >
+                  <input {...getAlertInputProps()} />
+                  <div className="flex justify-center mb-2">
+                    <div className="bg-destructive/10 p-3 rounded-full">
+                      <AlertCircle className="h-6 w-6 text-destructive" />
+                    </div>
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1">Upload Alert Tracker</h3>
+                  <p className="text-xs text-muted-foreground mb-3">(.xls or .xlsx)</p>
+                  {alertsFile ? (
+                    <div className="text-sm text-emerald-600 font-medium break-all">{alertsFile.name}</div>
+                  ) : (
+                    <Button variant="secondary" size="sm" disabled={isParsing}>Select File</Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <Button 
+                  onClick={handleProcessData} 
+                  disabled={isParsing || !activitiesFile || !alertsFile}
+                  className="w-full md:w-auto"
+                >
+                  {isParsing ? 'Processing Data...' : 'Process Files & Generate Merged Dataset'}
                 </Button>
               </div>
 
