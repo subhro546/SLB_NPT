@@ -175,13 +175,23 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   // Filter Activities: Date >= 2026-03-01
   const cutoffDate = new Date(2026, 2, 1); // March 1, 2026
   
+  let maxDateFound: Date | null = null;
+  let totalRowsChecked = 0;
+  let datesSuccessfullyParsed = 0;
+  
   const validActivities = rawActivities.filter((row: any, index: number) => {
     if (!row['Event No'] && !row['WellID'] && !row['Rig Name']) return false;
     
+    totalRowsChecked++;
     const rowDate = parseDateValue(row['Date'], index + 2); // Excel rows are 1-indexed, header is row 1
     
     if (!rowDate) {
       return false; // Skip without throwing, already logged warning
+    }
+    
+    datesSuccessfullyParsed++;
+    if (!maxDateFound || rowDate > maxDateFound) {
+       maxDateFound = rowDate;
     }
     
     // Store parsed date back so we don't parse again
@@ -311,7 +321,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   });
 
   if (records.length === 0) {
-    throw new Error("No valid data found after filtering (Ensure records are >= 2026-03-01).")
+    const maxDateStr = maxDateFound ? format(maxDateFound, 'yyyy-MM-dd') : 'None';
+    throw new Error(`No valid data found. Checked ${totalRowsChecked} rows, successfully parsed ${datesSuccessfullyParsed} dates. Max date found was ${maxDateStr}. (Ensure records are >= 2026-03-01)`);
   }
 
   return {
