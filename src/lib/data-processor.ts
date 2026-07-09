@@ -104,6 +104,11 @@ function normalizeKeys(obj: any): any {
   return newObj;
 }
 
+function normalizeRigName(rig: string): string {
+  if (!rig) return '';
+  return rig.toLowerCase().replace(/\(.*?\)/g, '').replace(/[\s\-]/g, '');
+}
+
 function getValue(row: any, ...possibleKeys: string[]): any {
   for (const k of possibleKeys) {
     if (row[k] !== undefined) return row[k];
@@ -221,7 +226,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let datesSuccessfullyParsed = 0;
   
   const validActivities = rawActivities.filter((row: any, index: number) => {
-    if (!getValue(row, 'eventno') && !getValue(row, 'wellid', 'well') && !getValue(row, 'rigname', 'rig')) return false;
+    if (!getValue(row, 'eventno') && !getValue(row, 'wellid', 'well') && !getValue(row, 'rigname', 'rig', 'facility', 'platform')) return false;
     
     totalRowsChecked++;
     const rowDate = parseDateValue(getValue(row, 'date'), index + 2); // Excel rows are 1-indexed, header is row 1
@@ -242,17 +247,24 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   });
 
   const parsedAlerts = rawAlerts.map((row: any, index: number) => {
-    const rowDate = parseDateValue(getValue(row, 'date'), index + 2);
+    const rawDate = getValue(row, 'date');
+    const rowDate = parseDateValue(rawDate, index + 2);
+    const rawRig = String(getValue(row, 'rig', 'rigname', 'facility', 'platform') || '');
+    const rawCde = String(getValue(row, 'cde', 'category', 'description', 'type', 'npttype') || '');
     
     return {
-      rig: String(getValue(row, 'rig', 'rigname') || ''),
-      cde: String(getValue(row, 'cde') || ''),
+      rawRig,
+      normalizedRig: normalizeRigName(rawRig),
+      rig: rawRig,
+      rawCde,
+      cde: rawCde,
+      rawDate,
       date: rowDate,
       alertTimeHour: parseTime(getValue(row, 'time', 'alerttime')),
       alertNumber: String(getValue(row, 'alertno', 'alertnumber') || ''),
       observation: String(getValue(row, 'observation') || ''),
       recommendation: String(getValue(row, 'recommendation') || ''),
-      normalizedCategory: normalizeAlertCategory(String(getValue(row, 'cde') || ''))
+      normalizedCategory: normalizeAlertCategory(rawCde)
     };
   });
 
@@ -261,10 +273,26 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     totalActivitiesLoaded: rawActivities.length,
     totalAlertsLoaded: rawAlerts.length,
     activitiesAfterFilter: validActivities.length,
-    uniqueRigsActivities: Array.from(new Set(validActivities.map((r: any) => String(getValue(r, 'rigname', 'rig') || 'Unknown')))),
-    uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.rig))),
-    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase') || 'Unknown'))))),
+    uniqueRigsActivities: Array.from(new Set(validActivities.map((r: any) => normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown'))))),
+    uniqueRigsAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedRig))),
+    uniqueCategoriesActivities: Array.from(new Set(validActivities.map((r: any) => normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown'))))),
     uniqueCategoriesAlerts: Array.from(new Set(parsedAlerts.map((a: any) => a.normalizedCategory))),
+    first10Activities: validActivities.slice(0, 10).map((r: any) => ({
+      originalCategoryValue: getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code'),
+      normalizedCategory: normalizeActivityCategory(String(getValue(r, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown')),
+      originalRigValue: getValue(r, 'rigname', 'rig', 'facility', 'platform'),
+      normalizedRig: normalizeRigName(String(getValue(r, 'rigname', 'rig', 'facility', 'platform') || 'Unknown')),
+      originalDateValue: getValue(r, 'date'),
+      parsedDate: r['_parsedDate'] ? format(r['_parsedDate'], 'yyyy-MM-dd') : 'Invalid'
+    })),
+    first10Alerts: parsedAlerts.slice(0, 10).map((a: any) => ({
+      originalRigValue: a.rawRig,
+      normalizedRig: a.normalizedRig,
+      originalCategoryValue: a.rawCde,
+      normalizedCategory: a.normalizedCategory,
+      originalDateValue: a.rawDate,
+      parsedDate: a.date ? format(a.date, 'yyyy-MM-dd') : 'Invalid'
+    })),
     alertAnalysis: []
   };
 
@@ -275,13 +303,16 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       let reasons = { rigMismatch: 0, catMismatch: 0, dateMismatch: 0 };
       
       for (const act of validActivities) {
-        const actRig = String(getValue(act, 'rigname', 'rig') || 'Unknown');
-        const actCat = normalizeActivityCategory(String(getValue(act, 'category', 'nptcategory', 'phase') || 'Unknown'));
+        const actRig = String(getValue(act, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
+        const actCat = normalizeActivityCategory(String(getValue(act, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown'));
         const actDate = act['_parsedDate'];
         
-        let matchRig = alert.rig === actRig;
+        let matchRig = alert.normalizedRig === normalizeRigName(actRig);
         let matchCat = alert.normalizedCategory === actCat;
-        let matchDate = alert.date && actDate && alert.date.getTime() === actDate.getTime();
+        
+        const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
+        const actDateStr = actDate ? format(actDate, 'yyyy-MM-dd') : null;
+        let matchDate = alertDateStr && actDateStr && alertDateStr === actDateStr;
         
         if (!matchRig) reasons.rigMismatch++;
         if (!matchCat) reasons.catMismatch++;
@@ -293,7 +324,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       }
       
       debugLog.alertAnalysis.push({
-        rig: alert.rig,
+        rig: alert.normalizedRig,
         category: alert.normalizedCategory,
         date: alert.date ? format(alert.date, 'yyyy-MM-dd') : 'Invalid',
         candidatesFound: candidatesBeforeTime,
@@ -310,7 +341,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let recordsMerged = 0;
 
   const records: NPTRecord[] = validActivities.map((row: any, index) => {
-    const rawCategory = String(getValue(row, 'category', 'nptcategory', 'phase') || 'Unknown');
+    const rawCategory = String(getValue(row, 'category', 'nptcategory', 'phase', 'description', 'eventtype', 'npttype', 'code') || 'Unknown');
     const normalizedCat = normalizeActivityCategory(rawCategory);
 
     originalCats.add(rawCategory);
@@ -320,7 +351,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     }
 
     let dateObj = row['_parsedDate'];
-    let monthStr = format(dateObj, 'yyyy-MM-dd');
+    let monthStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : 'Unknown';
+    const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
     
     let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
     let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
@@ -330,16 +362,18 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
        duration = endTimeHour - startTimeHour;
     }
 
-    const rigName = String(getValue(row, 'rigname', 'rig') || 'Unknown');
+    const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
+    const normalizedRig = normalizeRigName(rawRigName);
 
     // Matching logic
     let bestMatch = null;
     let minDiff = Infinity;
     
     for (const alert of parsedAlerts) {
-      if (alert.rig === rigName && 
+      const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
+      if (alert.normalizedRig === normalizedRig && 
           alert.normalizedCategory === normalizedCat &&
-          alert.date && alert.date.getTime() === dateObj.getTime()) {
+          alertDateStr && alertDateStr === dateObjStr) {
             
             // Need timestamp difference logic
             // Use start time or end time or midpoint? We can check difference to startTimeHour
@@ -360,7 +394,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     let improvementFactor = 0;
     let timeSaved = 0;
     let costSaved = 0;
-    let rigCost = getRigCost(rigName);
+    let rigCost = getRigCost(rawRigName);
 
     if (bestMatch) {
       // 20% to 50%
@@ -378,7 +412,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
 
     return {
       EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || index + 1,
-      RigName: rigName,
+      RigName: rawRigName,
       WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
       WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
       CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
