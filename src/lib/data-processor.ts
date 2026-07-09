@@ -321,6 +321,14 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   });
 
   if (records.length === 0) {
+    if (totalRowsChecked === 0) {
+      if (rawActivities.length === 0) {
+        throw new Error("No valid data found. The Time & Activities file appears to be empty or could not be parsed as Excel.");
+      } else {
+        const sampleKeys = Object.keys(rawActivities[0]).join(', ');
+        throw new Error(`No valid data found. Checked 0 rows because no rows matched the expected columns (Event No, WellID, Rig Name). Found columns: ${sampleKeys}`);
+      }
+    }
     const maxDateStr = maxDateFound ? format(maxDateFound, 'yyyy-MM-dd') : 'None';
     throw new Error(`No valid data found. Checked ${totalRowsChecked} rows, successfully parsed ${datesSuccessfullyParsed} dates. Max date found was ${maxDateStr}. (Ensure records are >= 2026-03-01)`);
   }
