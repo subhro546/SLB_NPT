@@ -122,15 +122,26 @@ function parseDateValue(dateVal: any, rowIndex: number): Date | null {
   if (!dateVal) return null;
   if (dateVal instanceof Date) return dateVal;
   if (typeof dateVal === 'number') {
-     // Excel serial date handling if needed, but cellDates: true should handle it
-     return null;
+     // Excel serial date handling
+     const excelEpoch = new Date(Date.UTC(1899, 11, 30)); 
+     return new Date(excelEpoch.getTime() + dateVal * 86400000);
   }
   if (typeof dateVal === 'string') {
-    const parts = dateVal.split('-');
-    if (parts.length === 3) {
+    const parts = dateVal.trim().split('-');
+    if (parts.length >= 3) {
       const day = parseInt(parts[0], 10);
-      const monthStr = parts[1];
-      const year = parseInt(parts[2], 10);
+      const monthStr = parts[1].trim();
+      let yearStr = parts[2].trim();
+      // Handle potential times attached to the year e.g. "2026 14:30"
+      if (yearStr.includes(' ')) {
+        yearStr = yearStr.split(' ')[0];
+      }
+      let year = parseInt(yearStr, 10);
+      
+      // Handle 2-digit years
+      if (year < 100) {
+        year += 2000;
+      }
       
       const monthMap: Record<string, number> = {
         Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,

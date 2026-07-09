@@ -50,7 +50,7 @@ async function main() {
     if (row['Date']) {
       const dateObj = new Date(row['Date'])
       if (!isNaN(dateObj.getTime())) {
-        monthStr = format(dateObj, 'MMM yyyy')
+        monthStr = format(dateObj, 'yyyy-MM-dd')
       } else if (typeof row['Date'] === 'string') {
         monthStr = row['Date'].substring(0, 7)
       }
