@@ -389,15 +389,51 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       }
     }
     
-    matchDiagnostics.push({
-      AlertNumber: alert.alertNumber,
-      Rig: alert.normalizedRig,
-      Category: alert.normalizedCategory,
-      Date: alertDateStr,
-      CandidatesFound: candidatesFound,
-      SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None',
-      CandidateDetails: candidateDiagnostics
-    });
+    if (candidatesFound === 0) {
+      const missedCandidates = [];
+      for (let i = 0; i < validActivities.length; i++) {
+        const row = validActivities[i];
+        const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
+        const normalizedRig = normalizeRigName(rawRigName);
+        let dateObj = row['_parsedDate'];
+        const dateObjStr = dateObj ? format(dateObj, 'yyyy-MM-dd') : null;
+        
+        if (alert.normalizedRig === normalizedRig && alertDateStr === dateObjStr) {
+          let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+          let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+          let eventNo = getValue(row, 'eventno', 'eventnumber') || i + 1;
+          const rawCategory = String(getValue(row, 'minor', 'minorcode') || 'Unknown');
+          
+          missedCandidates.push({
+            EventNumber: eventNo,
+            Minor: rawCategory,
+            NormalizedCategory: normalizeCategoryByCode(rawCategory),
+            StartTime: startTimeHour.toFixed(2),
+            EndTime: endTimeHour.toFixed(2)
+          });
+        }
+      }
+      
+      matchDiagnostics.push({
+        AlertNumber: alert.alertNumber,
+        Rig: alert.normalizedRig,
+        Category: alert.normalizedCategory,
+        Date: alertDateStr,
+        CandidatesFound: candidatesFound,
+        SelectedActivity: 'None',
+        MissedCandidates: missedCandidates
+      });
+    } else {
+      matchDiagnostics.push({
+        AlertNumber: alert.alertNumber,
+        Rig: alert.normalizedRig,
+        Category: alert.normalizedCategory,
+        Date: alertDateStr,
+        CandidatesFound: candidatesFound,
+        SelectedActivity: bestMatch ? (getValue(bestMatch, 'eventno', 'eventnumber') || matchedIndex + 1) : 'None',
+        CandidateDetails: candidateDiagnostics
+      });
+    }
 
     if (bestMatch) {
       recordsMerged++;
@@ -484,6 +520,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
        console.log(`  Candidates:`);
        for (const c of diag.CandidateDetails) {
          console.log(`    - Event No: ${c.EventNumber} | Start: ${c.ActivityStartTime} | End: ${c.ActivityEndTime} | AlertTime: ${c.AlertTime} | Diff: ${c.TimeDifference}h | InInterval: ${c.InInterval} | Reason: ${c.RejectedReason}`);
+       }
+    } else if (diag.MissedCandidates && diag.MissedCandidates.length > 0) {
+       console.log(`  Missed Candidates (Same Rig & Date):`);
+       for (const c of diag.MissedCandidates) {
+         console.log(`    - Event No: ${c.EventNumber} | Minor: ${c.Minor} | Normalized: ${c.NormalizedCategory} | Start: ${c.StartTime} | End: ${c.EndTime}`);
        }
     }
   }
