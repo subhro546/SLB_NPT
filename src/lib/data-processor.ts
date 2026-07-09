@@ -93,6 +93,23 @@ function normalizeActivityCategory(rawCat: string): string {
   return cat; // fallback
 }
 
+function normalizeKeys(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  const newObj: any = {};
+  for (const key of Object.keys(obj)) {
+    const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    newObj[cleanKey] = obj[key];
+  }
+  return newObj;
+}
+
+function getValue(row: any, ...possibleKeys: string[]): any {
+  for (const k of possibleKeys) {
+    if (row[k] !== undefined) return row[k];
+  }
+  return undefined;
+}
+
 function parseExcel(data: string | ArrayBuffer): any[] {
   const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
   const sheetName = workbook.SheetNames[0];
@@ -120,7 +137,7 @@ function parseExcel(data: string | ArrayBuffer): any[] {
     }
   }
   
-  return XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
+  return XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex }).map(normalizeKeys);
 }
 
 // Function to convert time string (e.g. "14:30:00" or Excel fraction) to hours decimal
@@ -203,10 +220,10 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let datesSuccessfullyParsed = 0;
   
   const validActivities = rawActivities.filter((row: any, index: number) => {
-    if (!row['Event No'] && !row['WellID'] && !row['Rig Name']) return false;
+    if (!getValue(row, 'eventno') && !getValue(row, 'wellid', 'well') && !getValue(row, 'rigname', 'rig')) return false;
     
     totalRowsChecked++;
-    const rowDate = parseDateValue(row['Date'], index + 2); // Excel rows are 1-indexed, header is row 1
+    const rowDate = parseDateValue(getValue(row, 'date'), index + 2); // Excel rows are 1-indexed, header is row 1
     
     if (!rowDate) {
       return false; // Skip without throwing, already logged warning
@@ -224,17 +241,17 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   });
 
   const parsedAlerts = rawAlerts.map((row: any, index: number) => {
-    const rowDate = parseDateValue(row['Date'], index + 2);
+    const rowDate = parseDateValue(getValue(row, 'date'), index + 2);
     
     return {
-      rig: String(row['Rig'] || row['Rig Name'] || ''),
-      cde: String(row['CDE'] || ''),
+      rig: String(getValue(row, 'rig', 'rigname') || ''),
+      cde: String(getValue(row, 'cde') || ''),
       date: rowDate,
-      alertTimeHour: parseTime(row['Time'] || row['Alert Time']),
-      alertNumber: String(row['Alert No'] || row['Alert Number'] || ''),
-      observation: String(row['Observation'] || ''),
-      recommendation: String(row['Recommendation'] || ''),
-      normalizedCategory: normalizeAlertCategory(String(row['CDE'] || ''))
+      alertTimeHour: parseTime(getValue(row, 'time', 'alerttime')),
+      alertNumber: String(getValue(row, 'alertno', 'alertnumber') || ''),
+      observation: String(getValue(row, 'observation') || ''),
+      recommendation: String(getValue(row, 'recommendation') || ''),
+      normalizedCategory: normalizeAlertCategory(String(getValue(row, 'cde') || ''))
     };
   });
 
@@ -243,7 +260,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let recordsMerged = 0;
 
   const records: NPTRecord[] = validActivities.map((row: any, index) => {
-    const rawCategory = String(row['Category'] || 'Unknown');
+    const rawCategory = String(getValue(row, 'category', 'nptcategory', 'phase') || 'Unknown');
     const normalizedCat = normalizeActivityCategory(rawCategory);
 
     originalCats.add(rawCategory);
@@ -255,15 +272,15 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     let dateObj = row['_parsedDate'];
     let monthStr = format(dateObj, 'yyyy-MM-dd');
     
-    let startTimeHour = parseTime(row['Start Time'] || row['From']);
-    let endTimeHour = parseTime(row['End Time'] || row['To']);
-    let duration = Number(row['Hours']) || Number(row['Duration']) || 0;
+    let startTimeHour = parseTime(getValue(row, 'starttime', 'from', 'time'));
+    let endTimeHour = parseTime(getValue(row, 'endtime', 'to'));
+    let duration = Number(getValue(row, 'hours', 'duration')) || 0;
     
     if (duration === 0 && endTimeHour > startTimeHour) {
        duration = endTimeHour - startTimeHour;
     }
 
-    const rigName = String(row['Rig Name'] || 'Unknown');
+    const rigName = String(getValue(row, 'rigname', 'rig') || 'Unknown');
 
     // Matching logic
     let bestMatch = null;
@@ -310,22 +327,22 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     };
 
     return {
-      EventNo: Number(row['Event No']) || index + 1,
+      EventNo: Number(getValue(row, 'eventno', 'eventnumber')) || index + 1,
       RigName: rigName,
-      WellID: String(row['WellID'] || 'Unknown'),
-      WellCategory: String(row['Well Category'] || 'Unknown'),
-      CompanyCode: String(row['Company Code'] || 'Unknown'),
-      CDE: bestMatch ? bestMatch.cde : String(row['CDE'] || ''),
-      Depth: Number(row['Depth']) || 0,
-      OnshoreOffshore: String(row['Onshore/Offshore'] || 'Unknown'),
+      WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
+      WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
+      CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
+      CDE: bestMatch ? bestMatch.cde : String(getValue(row, 'cde') || ''),
+      Depth: Number(getValue(row, 'depth')) || 0,
+      OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
       Category: normalizedCat,
       Hours: duration,
       CostUSDPerDay: rigCost, // using Rig Cost calculated for all logic
       CostImpact: duration * (rigCost / 24),
       TimeSaved: timeSaved,
       CostSaved: costSaved,
-      InchargeName: String(row['Incharge Name'] || 'Unknown'),
-      MonitoringEngineer: String(row['Monitoring Engineer'] || 'Unknown'),
+      InchargeName: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
+      MonitoringEngineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
       Month: monthStr,
       
       AlertNumber: bestMatch ? bestMatch.alertNumber : '',
