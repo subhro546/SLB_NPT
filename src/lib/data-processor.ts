@@ -373,6 +373,12 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     throw new Error(`No valid data found. Checked ${totalRowsChecked} rows, successfully parsed ${datesSuccessfullyParsed} dates. Max date found was ${maxDateStr}. (Ensure records are >= 2026-03-01)`);
   }
 
+  if (recordsMerged === 0) {
+    const actKeys = rawActivities.length > 0 ? Object.keys(rawActivities[0]).join(', ') : 'none';
+    const alertKeys = rawAlerts.length > 0 ? Object.keys(rawAlerts[0]).join(', ') : 'none';
+    throw new Error(`DEBUG HELP: 0 records merged. Activities Keys: [${actKeys}]. Alerts Keys: [${alertKeys}]. Please send this error!`);
+  }
+
   return {
     records,
     originalCategoriesCount: originalCats.size,
