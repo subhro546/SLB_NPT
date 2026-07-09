@@ -90,6 +90,7 @@ function normalizeKeys(obj: any): any {
     const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     newObj[cleanKey] = obj[key];
   }
+  newObj.__raw_original_row = obj;
   return newObj;
 }
 
@@ -448,7 +449,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
 
   if (recordsMerged === 0) {
     console.warn("0 records merged. Returning debugLog to UI.");
-    throw new Error(`DEBUG HELP: 0 records merged.\n\nFirst 20 Activities:\n${JSON.stringify(debugLog.first20Activities, null, 2)}\n\nFirst 20 Alerts:\n${JSON.stringify(debugLog.first20Alerts, null, 2)}`);
+    
+    const rawFirstActivityRow = rawActivities.length > 0 ? rawActivities[0].__raw_original_row : null;
+    const rawKeys = rawFirstActivityRow ? Object.keys(rawFirstActivityRow) : [];
+    
+    throw new Error(`DEBUG HELP: 0 records merged.\n\nRAW ACTIVITIES FIRST ROW KEYS:\n${JSON.stringify(rawKeys, null, 2)}\n\nRAW ACTIVITIES FIRST ROW FULL JSON:\n${JSON.stringify(rawFirstActivityRow, null, 2)}\n\nFirst 20 Activities:\n${JSON.stringify(debugLog.first20Activities, null, 2)}\n\nFirst 20 Alerts:\n${JSON.stringify(debugLog.first20Alerts, null, 2)}`);
   }
 
   return {
