@@ -39,7 +39,7 @@ export default function ExecutiveCommandCenter() {
   const totalCostImpact = data.reduce((acc, curr) => acc + curr.CostImpact, 0)
   const totalEstimatedSavings = data.reduce((acc, curr) => acc + curr.CostSaved, 0)
   
-  const totalInterventions = data.filter(d => d.TimeSaved > 0).length
+  const totalInterventions = data.filter(d => d.HasIntervention).length
   const toolFailureEvents = data.filter(d => (d.Category || '').toLowerCase().includes('tool failure')).length
   const denominator = totalEvents - toolFailureEvents
   const interventionMetric = denominator > 0 ? (totalInterventions / denominator) * 100 : 0

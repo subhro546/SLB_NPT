@@ -23,6 +23,8 @@ export interface NPTRecord {
   InchargeName?: string;
   MonitoringEngineer?: string;
   Month?: string;
+  HasIntervention?: boolean;
+  GroupedEventCount?: number;
   // Dual File Upload Fields
   AlertNumber?: string;
   AlertTime?: string;

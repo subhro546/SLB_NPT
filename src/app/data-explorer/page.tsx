@@ -51,7 +51,7 @@ export default function DataExplorer() {
   const [showInterventionsOnly, setShowInterventionsOnly] = useState(false)
 
   const displayData = useMemo(() => {
-    return showInterventionsOnly ? data.filter(d => d.TimeSaved > 0) : data
+    return showInterventionsOnly ? data.filter(d => d.HasIntervention) : data
   }, [data, showInterventionsOnly])
 
   const columns = useMemo<ColumnDef<NPTRecord>[]>(() => {

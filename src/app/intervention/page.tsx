@@ -91,7 +91,7 @@ export default function InterventionIntelligence() {
     acc[type].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
-  const onshoreOffshoreData = Object.values(onshoreOffshoreAgg).filter(d => d.TimeSaved > 0).sort((a, b) => b.TimeSaved - a.TimeSaved);
+  const onshoreOffshoreData = Object.values(onshoreOffshoreAgg).filter(d => d.HasIntervention).sort((a, b) => b.TimeSaved - a.TimeSaved);
 
   // 4. Cost Saving Rig Wise (Total & Average)
   const rigCostAgg = data.reduce((acc, curr) => {
@@ -157,7 +157,7 @@ export default function InterventionIntelligence() {
   const inchargeAgg = data.reduce((acc, curr) => {
     const inc = (curr as any).InchargeName || 'Unknown';
     if (!acc[inc]) acc[inc] = { name: inc, Interventions: 0, TimeSaved: 0 };
-    if (curr.TimeSaved > 0) acc[inc].Interventions += 1;
+    if (curr.HasIntervention) acc[inc].Interventions += 1;
     acc[inc].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
@@ -167,7 +167,7 @@ export default function InterventionIntelligence() {
   const engineerAgg = data.reduce((acc, curr) => {
     const eng = (curr as any).MonitoringEngineer || 'Unknown';
     if (!acc[eng]) acc[eng] = { name: eng, Interventions: 0, TimeSaved: 0 };
-    if (curr.TimeSaved > 0) acc[eng].Interventions += 1;
+    if (curr.HasIntervention) acc[eng].Interventions += 1;
     acc[eng].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);
@@ -177,7 +177,7 @@ export default function InterventionIntelligence() {
   const monthlyAgg = data.reduce((acc, curr) => {
     const m = (curr as any).Month || 'Unknown';
     if (!acc[m]) acc[m] = { name: m, Interventions: 0, TimeSaved: 0 };
-    if (curr.TimeSaved > 0) acc[m].Interventions += 1;
+    if (curr.HasIntervention) acc[m].Interventions += 1;
     acc[m].TimeSaved += curr.TimeSaved;
     return acc;
   }, {} as Record<string, any>);

@@ -2,7 +2,7 @@ import { NPTRecord } from "@/store/useAppStore";
 import { isActionableCategory } from "./constants";
 
 export function summarizeCurrentView(records: NPTRecord[]) {
-  const interventionRecords = records.filter(r => r.TimeSaved > 0);
+  const interventionRecords = records.filter(r => r.HasIntervention);
   return {
     total_interventions_applied: interventionRecords.length,
     total_time_saved_hours: records.reduce((sum, r) => sum + r.TimeSaved, 0),
@@ -17,7 +17,7 @@ export function interventionPerformance(records: NPTRecord[]) {
     acc[curr.Category].TimeSaved += curr.TimeSaved;
     acc[curr.Category].CostSaved += curr.CostSaved;
     acc[curr.Category].CostImpact += curr.CostImpact;
-    if (curr.TimeSaved > 0) acc[curr.Category].Apps += 1;
+    if (curr.HasIntervention) acc[curr.Category].Apps += 1;
     return acc;
   }, {} as Record<string, any>);
 

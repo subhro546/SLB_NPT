@@ -55,7 +55,7 @@ export function useFilteredData(): NPTRecord[] {
 
       filtered.forEach(r => {
         categoryCounts[r.Category] = (categoryCounts[r.Category] || 0) + 1;
-        if (r.TimeSaved > 0) {
+        if (r.HasIntervention) {
           categoryHasRawSavings[r.Category] = true;
         }
       });
