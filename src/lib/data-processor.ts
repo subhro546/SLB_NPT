@@ -679,7 +679,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
 
   // --- TEMP DEBUG LOGS ---
   if (records.length > 0) {
-    const rawCols = Object.keys(records[0]?.__raw_original_row || {}).join(', ');
+    const rawCols = Object.keys((records[0] as any)?.__raw_original_row || {}).join(', ');
     const uniqueWells = new Set(records.map(r => r.WellID));
     const uniqueAssets = new Set(records.map(r => r.Asset));
     
