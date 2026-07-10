@@ -39,6 +39,7 @@ export interface NPTRecord {
   Duration?: number;
   StartTime?: string;
   EndTime?: string;
+  _isSynthetic?: boolean;
 }
 
 export interface DataQualityMetrics {
