@@ -107,10 +107,19 @@ function getValue(row: any, ...possibleKeys: string[]): any {
   return undefined;
 }
 
-function parseExcel(data: string | ArrayBuffer): any[] {
+function parseExcel(data: string | ArrayBuffer, isActivities: boolean = false): any[] {
   const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
+  
+  if (isActivities) {
+    console.log(`Worksheet name being parsed: ${sheetName}`);
+    console.log(`Worksheet !ref (used range): ${worksheet['!ref']}`);
+    if (worksheet['!ref']) {
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+      console.log(`Last row in worksheet: ${range.e.r + 1}`);
+    }
+  }
   
   // Get raw array of arrays to find the actual header row
   const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -134,7 +143,16 @@ function parseExcel(data: string | ArrayBuffer): any[] {
     }
   }
   
-  return XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex }).map(normalizeKeys);
+  const parsedData = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
+  
+  if (isActivities) {
+    console.log(`Last row actually iterated by the parser: ${parsedData.length + headerRowIndex + 1}`);
+    parsedData.forEach((row: any, idx) => {
+      row['_rawRowIndex'] = headerRowIndex + 2 + idx;
+    });
+  }
+  
+  return parsedData.map(normalizeKeys);
 }
 
 // Function to convert time string (e.g. "14:30:00" or Excel fraction) to hours decimal
@@ -206,8 +224,8 @@ function parseDateValue(dateVal: any, rowIndex: number): Date | null {
 }
 
 export function processDualFiles(activitiesData: string | ArrayBuffer, alertsData: string | ArrayBuffer): ParseResult {
-  const rawActivities = parseExcel(activitiesData);
-  const rawAlerts = parseExcel(alertsData);
+  const rawActivities = parseExcel(activitiesData, true);
+  const rawAlerts = parseExcel(alertsData, false);
 
   // Filter Activities: Date >= 2026-03-01
   const cutoffDate = new Date(2026, 2, 1); // March 1, 2026
@@ -290,13 +308,42 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   // STEP 1: Filter valid activities (March 2026 onwards, Intervention Minor Codes)
   const marchFirst = new Date('2026-03-01T00:00:00Z');
   
-  const filteredActivities = validActivities.filter(row => {
+  console.log(`--- LAST 40 ROWS DEBUG ---`);
+  const startIndex = Math.max(0, validActivities.length - 40);
+  
+  const filteredActivities = validActivities.filter((row, index) => {
     let dateObj = row['_parsedDate'];
-    if (!dateObj || dateObj < marchFirst) return false;
+    const datePasses = !!dateObj && dateObj >= marchFirst;
     
     const rawCategory = String(getValue(row, 'minor', 'minorcode') || '');
     const upperCat = rawCategory.toUpperCase();
-    return upperCat.startsWith('22') || upperCat.startsWith('8');
+    const catPasses = upperCat.startsWith('22') || upperCat.startsWith('8');
+    
+    const accepted = datePasses && catPasses;
+    
+    if (index >= startIndex) {
+       const originalRow = row.__raw_original_row || {};
+       const origMinor = originalRow['Minor'] !== undefined ? originalRow['Minor'] : (originalRow['minor'] !== undefined ? originalRow['minor'] : originalRow['minorcode']);
+       console.log(`Excel row number: ${originalRow._rawRowIndex || 'Unknown'}`);
+       console.log(`Minor column value: ${origMinor}`);
+       console.log(`typeof Minor: ${typeof origMinor}`);
+       console.log(`getValue(row, "minor"): ${getValue(row, 'minor')}`);
+       console.log(`getValue(row, "minorcode"): ${getValue(row, 'minorcode')}`);
+       console.log(`Raw category extracted: ${rawCategory}`);
+       console.log(`upperCat: ${upperCat}`);
+       console.log(`Passes startsWith("22")?: ${upperCat.startsWith('22')}`);
+       console.log(`Passes startsWith("8")?: ${upperCat.startsWith('8')}`);
+       console.log(`Accepted or Rejected: ${accepted ? 'Accepted' : 'Rejected'}`);
+       
+       if (!getValue(row, 'minor') && origMinor !== undefined && origMinor !== null && origMinor !== '') {
+           console.log(`IDENTIFIED: getValue returned undefined/empty but excel contains a value! This happens if the column header had invisible characters or was processed differently.`);
+       }
+       
+       console.log(`----------------------------------------`);
+    }
+    
+    if (!datePasses) return false;
+    return catPasses;
   });
 
   const totalActivityRows = filteredActivities.length;
