@@ -258,6 +258,19 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   const parsedAlerts = rawAlerts.map((row: any, index: number) => {
     const rawDate = getValue(row, 'date');
     const rowDate = parseDateValue(rawDate, index + 2);
+    const alertNumber = String(getValue(row, 'alertno', 'alertnumber') || '');
+    
+    if (alertNumber === '860' || alertNumber === '897') {
+      console.log(`\n--- Date Trace: Alert ${alertNumber} (Excel Parsing) ---`);
+      console.log(`Raw Excel Value: ${rawDate}`);
+      console.log(`Parsed Value: ${rowDate}`);
+      console.log(`typeof: ${typeof rowDate}`);
+      if (rowDate) {
+        console.log(`Constructor: ${rowDate.constructor.name}`);
+        console.log(`toISOString: ${rowDate.toISOString ? rowDate.toISOString() : 'N/A'}`);
+      }
+    }
+    
     const rawRig = String(getValue(row, 'rig', 'rigname', 'facility', 'platform') || '');
     const rawCde = String(getValue(row, 'cde', 'category', 'description', 'type', 'npttype') || '');
     
@@ -442,6 +455,16 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
         OriginalRowCount: 1,
         _isSynthetic: isSynthetic
       };
+      
+      const eventNoStr = String(getValue(row, 'eventno') || '');
+      if (eventNoStr === 'e76016' || eventNoStr === 'e76018') {
+        console.log(`\n--- Date Trace: Synthetic Event ${eventNoStr} (Event Parsing) ---`);
+        console.log(`Rig: ${normalizedRig}`);
+        console.log(`Category: ${normalizedCat}`);
+        console.log(`Date (dateObjStr from format): ${dateObjStr}`);
+        console.log(`Raw Parsed Date object: ${row['_parsedDate'] ? row['_parsedDate'].toISOString() : 'N/A'}`);
+      }
+      
       activeDepthSum = depth;
     } else {
       const activeEndHour = parseTime(activeEvent.EndTime || '00:00');
@@ -537,6 +560,14 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let unmatchedAlertsPrinted = 0;
 
   for (const alert of parsedAlerts) {
+    if (alert.alertNumber === '860' || alert.alertNumber === '897') {
+      console.log(`\n--- Date Trace: Alert ${alert.alertNumber} (Before Matching Loop) ---`);
+      console.log(`Rig: ${alert.normalizedRig}`);
+      console.log(`Category: ${alert.normalizedCategory}`);
+      console.log(`Date Object: ${alert.date ? alert.date.toISOString() : 'N/A'}`);
+      console.log(`Date String used for matching: ${alert.date ? format(alert.date, 'yyyy-MM-dd') : 'null'}`);
+    }
+
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
     if (!alertDateStr) continue;
 
@@ -545,6 +576,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     const candidatesLog: any[] = [];
     
     for (const record of records) {
+      if ((record as any).EventNoStr === 'e76016' || (record as any).EventNoStr === 'e76018') {
+         // Attach it earlier or log it here. Wait, eventNo is not saved in NPTRecord! 
+         // I'll log any synthetic event during the loop.
+      }
+      
       const recRig = normalizeRigName(record.RigName);
       const rigMatch = alert.normalizedRig === recRig;
       const catMatch = alert.normalizedCategory === record.Category;
