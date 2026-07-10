@@ -374,8 +374,17 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   };
 
+  let synthProcessed = 0;
+  let synthNew = 0;
+  let synthMerged = 0;
+  let synthSkipped = 0;
+
   for (let i = 0; i < filteredActivities.length; i++) {
     const row = filteredActivities[i];
+    
+    const originalRow = row.__raw_original_row || {};
+    const excelRowNumber = originalRow._rawRowIndex || 0;
+    const isSynthetic = excelRowNumber >= 11260 && excelRowNumber <= 11290;
     
     const rawRigName = String(getValue(row, 'rigname', 'rig', 'facility', 'platform') || 'Unknown');
     const normalizedRig = normalizeRigName(rawRigName);
@@ -391,7 +400,20 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     originalCats.add(rawCategory);
     normalizedCats.add(normalizedCat);
 
+    if (isSynthetic) {
+      synthProcessed++;
+      console.log(`\n--- Event Grouping Debug for Row ${excelRowNumber} ---`);
+      console.log(`Parsed Date: ${dateObjStr}`);
+      console.log(`Parsed Rig: ${normalizedRig}`);
+      console.log(`Parsed Category: ${normalizedCat}`);
+      console.log(`Event grouping criteria being checked vs ActiveEvent...`);
+    }
+
     if (!activeEvent) {
+      if (isSynthetic) {
+        console.log(`NEW event created (No active event exists yet)`);
+        synthNew++;
+      }
       let rigCost = getRigCost(rawRigName);
       activeEvent = {
         EventNo: records.length + 1,
@@ -426,13 +448,19 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       const avgDepth = activeEvent.OriginalRowCount ? (activeDepthSum / activeEvent.OriginalRowCount) : depth;
       const depthDiff = Math.abs(depth - avgDepth);
       
-      if (
-        normalizeRigName(activeEvent.RigName) === normalizedRig &&
-        activeEvent.Category === normalizedCat &&
-        activeEvent.Month === dateObjStr &&
-        timeGap <= 1 && timeGap >= -12 && // Allow some overlap (e.g. -12 for next day overlap, but usually it's positive)
-        depthDiff <= 50
-      ) {
+      const rigMatch = normalizeRigName(activeEvent.RigName) === normalizedRig;
+      const catMatch = activeEvent.Category === normalizedCat;
+      const dateMatch = activeEvent.Month === dateObjStr;
+      const timeMatch = timeGap <= 1 && timeGap >= -12;
+      const depthMatch = depthDiff <= 50;
+
+      if (rigMatch && catMatch && dateMatch && timeMatch && depthMatch) {
+        if (isSynthetic) {
+          console.log(`MERGED into existing event (Existing Event Index: ${records.length})`);
+          console.log(`Existing Event: (${activeEvent.Month}, ${normalizeRigName(activeEvent.RigName)}, ${activeEvent.Category})`);
+          console.log(`Incoming Synthetic Row: (${dateObjStr}, ${normalizedRig}, ${normalizedCat})`);
+          synthMerged++;
+        }
         // Merge
         activeEvent.Hours += duration;
         activeEvent.Duration = activeEvent.Hours;
@@ -446,6 +474,16 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           activeEvent.EndTime = formatTimeStr(endTimeHour);
         }
       } else {
+        if (isSynthetic) {
+          console.log(`NEW event created (Did not merge into active event)`);
+          console.log(`Reason not merged:`);
+          if (!rigMatch) console.log(`- Rig mismatch (${normalizeRigName(activeEvent.RigName)} vs ${normalizedRig})`);
+          if (!catMatch) console.log(`- Category mismatch (${activeEvent.Category} vs ${normalizedCat})`);
+          if (!dateMatch) console.log(`- Date mismatch (${activeEvent.Month} vs ${dateObjStr})`);
+          if (!timeMatch) console.log(`- Time gap exceeded limit (timeGap: ${timeGap})`);
+          if (!depthMatch) console.log(`- Depth gap exceeded 50 (depthDiff: ${depthDiff})`);
+          synthNew++;
+        }
         // Push and start new
         records.push(activeEvent);
         
@@ -484,6 +522,12 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   if (activeEvent) {
     records.push(activeEvent);
   }
+
+  console.log(`\n--- SYNTHETIC GROUPING SUMMARY ---`);
+  console.log(`Number of synthetic rows processed: ${synthProcessed}`);
+  console.log(`Number of synthetic events created: ${synthNew}`);
+  console.log(`Number merged into existing events: ${synthMerged}`);
+  console.log(`Number skipped: ${synthSkipped}`);
 
   // STEP 2: Secondary Matching with Alert Tracker
   const matchDiagnostics: any[] = [];
