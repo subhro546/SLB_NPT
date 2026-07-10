@@ -209,11 +209,13 @@ export default function UploadPage() {
                 {(() => {
                   const ds = datasets.find(d => d.id === activeDatasetId)!;
                   const records = ds.records;
-                  const uniqueWells = new Set(records.map(r => r.WellID)).size;
+                  const uniqueWells = new Set(records.map(r => r.WellID).filter(Boolean)).size;
+                  const uniqueAssets = Array.from(new Set(records.map(r => r.Asset).filter(Boolean).filter(a => a !== 'Unknown')));
                   const missingValues = records.reduce((acc, r) => {
                     let missing = 0;
-                    if (r.WellID === 'Unknown') missing++;
-                    if (r.Category === 'Unknown') missing++;
+                    if (!r.WellID || r.WellID === 'Unknown') missing++;
+                    if (!r.Category || r.Category === 'Unknown') missing++;
+                    if (!r.Asset || r.Asset === 'Unknown') missing++;
                     return acc + missing;
                   }, 0);
 
@@ -234,6 +236,10 @@ export default function UploadPage() {
                       <div className="space-y-1">
                         <span className="text-muted-foreground">Wells Covered</span>
                         <p className="font-medium">{uniqueWells.toLocaleString()}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">Assets</span>
+                        <p className="font-medium">{uniqueAssets.length === 1 ? uniqueAssets[0] : uniqueAssets.length.toLocaleString()}</p>
                       </div>
 
                       <div className="space-y-1">

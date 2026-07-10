@@ -432,9 +432,10 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       activeEvent = {
         EventNo: records.length + 1,
         RigName: rawRigName,
-        WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
+        WellID: String(getValue(row, 'operationname', 'operation', 'wellname', 'wellid', 'well') || 'Unknown'),
         WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
         CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
+        Asset: String(getValue(row, 'asset') || 'Unknown'),
         CDE: String(getValue(row, 'cde') || ''),
         Depth: depth,
         OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
@@ -519,9 +520,10 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
         activeEvent = {
           EventNo: records.length + 1,
           RigName: rawRigName,
-          WellID: String(getValue(row, 'wellid', 'well') || 'Unknown'),
+          WellID: String(getValue(row, 'operationname', 'operation', 'wellname', 'wellid', 'well') || 'Unknown'),
           WellCategory: String(getValue(row, 'wellcategory') || 'Unknown'),
           CompanyCode: String(getValue(row, 'companycode', 'company') || 'Unknown'),
+          Asset: String(getValue(row, 'asset') || 'Unknown'),
           CDE: String(getValue(row, 'cde') || ''),
           Depth: depth,
           OnshoreOffshore: String(getValue(row, 'onshoreoffshore', 'location') || 'Unknown'),
@@ -674,6 +676,26 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
 
   console.log(`Total Unique Events Grouped: ${records.length}`);
   console.log(`Total Alerts Matched: ${recordsMerged} / ${parsedAlerts.length}`);
+
+  // --- TEMP DEBUG LOGS ---
+  if (records.length > 0) {
+    const rawCols = Object.keys(records[0]?.__raw_original_row || {}).join(', ');
+    const uniqueWells = new Set(records.map(r => r.WellID));
+    const uniqueAssets = new Set(records.map(r => r.Asset));
+    
+    console.log(`\n--- DATA MAPPING DEBUG ---`);
+    console.log(`Detected Column Names (from first valid activity): ${rawCols}`);
+    console.log(`Column mapped to Well Name: 'operationname', 'operation', 'wellname', 'wellid', 'well'`);
+    console.log(`Column mapped to Asset: 'asset'`);
+    console.log(`Number of unique Operation Names (Wells) found: ${uniqueWells.size}`);
+    console.log(`Number of unique Assets found: ${uniqueAssets.size}`);
+    console.log(`First 10 parsed records after mapping (Well/Asset preview):`);
+    records.slice(0, 10).forEach(r => {
+      console.log(`  Event ${r.EventNo} | Well: ${r.WellID} | Asset: ${r.Asset}`);
+    });
+    console.log(`--------------------------\n`);
+  }
+  // -----------------------
 
   if (records.length === 0) {
     if (totalRowsChecked === 0) {

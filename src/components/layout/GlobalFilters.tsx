@@ -31,23 +31,25 @@ export function GlobalFilters() {
   const records = activeDataset.records
 
   // Hierarchical Filter Logic:
-  // 0: Onshore/offshore -> 1: Asset -> 2: Well Category -> 3: Rig Name -> 4: Categories
+  // 0: Onshore/offshore -> 1: Asset -> 2: Well Category -> 3: Well Name -> 4: Rig Name -> 5: Categories
   const getHierarchyRecords = (level: number) => {
     return records.filter(r => {
       if (!isActionableCategory(r.Category)) return false;
       if (level > 0 && (globalFilters.onshoreOffshores || []).length > 0 && !(globalFilters.onshoreOffshores || []).includes(r.OnshoreOffshore)) return false;
-      if (level > 1 && (globalFilters.companyCodes || []).length > 0 && !(globalFilters.companyCodes || []).includes(r.CompanyCode)) return false;
+      if (level > 1 && (globalFilters.assets || []).length > 0 && !(globalFilters.assets || []).includes(r.Asset || 'Unknown')) return false;
       if (level > 2 && (globalFilters.wellCategories || []).length > 0 && !(globalFilters.wellCategories || []).includes(r.WellCategory)) return false;
-      if (level > 3 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
+      if (level > 3 && (globalFilters.wellNames || []).length > 0 && !(globalFilters.wellNames || []).includes(r.WellID)) return false; // Note: we'll use a new wellNames filter
+      if (level > 4 && (globalFilters.rigNames || []).length > 0 && !(globalFilters.rigNames || []).includes(r.RigName)) return false;
       return true;
     });
   }
 
   const uniqueOnshoreOffshores = Array.from(new Set(getHierarchyRecords(0).map(r => r.OnshoreOffshore).filter(Boolean))).sort()
-  const uniqueCompanyCodes = Array.from(new Set(getHierarchyRecords(1).map(r => r.CompanyCode).filter(Boolean))).sort()
+  const uniqueAssets = Array.from(new Set(getHierarchyRecords(1).map(r => r.Asset).filter(Boolean).filter(a => a !== 'Unknown'))).sort()
   const uniqueWellCategories = Array.from(new Set(getHierarchyRecords(2).map(r => r.WellCategory).filter(Boolean))).sort().filter(val => val === 'D' || val === 'E')
-  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(3).map(r => r.RigName).filter(Boolean))).sort()
-  const uniqueCategories = Array.from(new Set(getHierarchyRecords(4).map(r => r.Category).filter(Boolean))).sort()
+  const uniqueWellNames = Array.from(new Set(getHierarchyRecords(3).map(r => r.WellID).filter(Boolean).filter(w => w !== 'Unknown'))).sort()
+  const uniqueRigNames = Array.from(new Set(getHierarchyRecords(4).map(r => r.RigName).filter(Boolean))).sort()
+  const uniqueCategories = Array.from(new Set(getHierarchyRecords(5).map(r => r.Category).filter(Boolean))).sort()
 
   const activeFilterCount = Object.values(globalFilters).reduce((acc, val) => {
     if (Array.isArray(val)) return acc + val.length
@@ -79,8 +81,8 @@ export function GlobalFilters() {
         </Select>
 
         <Select 
-          value={globalFilters.companyCodes?.[0] || "all"} 
-          onValueChange={(val) => setGlobalFilters({ companyCodes: !val || val === 'all' ? [] : [val] })}
+          value={globalFilters.assets?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ assets: !val || val === 'all' ? [] : [val] })}
         >
           <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
             <span className="text-muted-foreground mr-1">Asset:</span>
@@ -88,7 +90,21 @@ export function GlobalFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {uniqueCompanyCodes.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+            {uniqueAssets.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={globalFilters.wellNames?.[0] || "all"} 
+          onValueChange={(val) => setGlobalFilters({ wellNames: !val || val === 'all' ? [] : [val] })}
+        >
+          <SelectTrigger className="h-8 text-xs whitespace-nowrap min-w-[140px]">
+            <span className="text-muted-foreground mr-1">Well:</span>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {uniqueWellNames.map(w => <SelectItem key={w} value={w}>{w}</SelectItem>)}
           </SelectContent>
         </Select>
 

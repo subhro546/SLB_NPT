@@ -9,6 +9,7 @@ export interface NPTRecord {
   WellID: string;
   WellCategory: string;
   CompanyCode: string;
+  Asset?: string;
   CDE: string;
   Depth: number;
   OnshoreOffshore: string;
@@ -61,6 +62,8 @@ export interface GlobalFilters {
   interventionStartDate?: Date | null;
   interventionEndDate?: Date | null;
   rigNames: string[];
+  assets: string[];
+  wellNames: string[];
   companyCodes: string[];
   wellCategories: string[];
   onshoreOffshores: string[];
@@ -90,6 +93,8 @@ interface AppState {
 
 const initialFilters: GlobalFilters = {
   rigNames: [],
+  assets: [],
+  wellNames: [],
   companyCodes: [],
   wellCategories: [],
   onshoreOffshores: [],
