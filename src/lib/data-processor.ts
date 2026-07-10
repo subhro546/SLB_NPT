@@ -108,7 +108,7 @@ function getValue(row: any, ...possibleKeys: string[]): any {
 }
 
 function parseExcel(data: string | ArrayBuffer, isActivities: boolean = false): any[] {
-  const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
+  const workbook = XLSX.read(data, { type: 'binary', cellDates: false });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
   
@@ -145,6 +145,8 @@ function parseExcel(data: string | ArrayBuffer, isActivities: boolean = false): 
   
   const parsedData = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
   
+  // TRACE: Removed deep trace since we're now tracing at the parsing level
+
   if (isActivities) {
     console.log(`Last row actually iterated by the parser: ${parsedData.length + headerRowIndex + 1}`);
     parsedData.forEach((row: any, idx) => {
@@ -176,11 +178,13 @@ function parseTime(timeVal: any): number {
 function parseDateValue(dateVal: any, rowIndex: number): Date | null {
   if (!dateVal) return null;
   if (dateVal instanceof Date) return dateVal;
+  
   if (typeof dateVal === 'number') {
-     // Excel serial date handling
-     const excelEpoch = new Date(Date.UTC(1899, 11, 30)); 
-     return new Date(excelEpoch.getTime() + dateVal * 86400000);
+     // Excel serial date handling - deterministic without timezone drift
+     const d = XLSX.SSF.parse_date_code(dateVal);
+     return new Date(Date.UTC(d.y, d.m - 1, d.d));
   }
+  
   if (typeof dateVal === 'string') {
     const parts = dateVal.trim().split('-');
     if (parts.length >= 3) {
@@ -261,14 +265,11 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     const alertNumber = String(getValue(row, 'alertno', 'alertnumber') || '');
     
     if (alertNumber === '860' || alertNumber === '897') {
-      console.log(`\n--- Date Trace: Alert ${alertNumber} (Excel Parsing) ---`);
-      console.log(`Raw Excel Value: ${rawDate}`);
-      console.log(`Parsed Value: ${rowDate}`);
-      console.log(`typeof: ${typeof rowDate}`);
-      if (rowDate) {
-        console.log(`Constructor: ${rowDate.constructor.name}`);
-        console.log(`toISOString: ${rowDate.toISOString ? rowDate.toISOString() : 'N/A'}`);
-      }
+      console.log(`\n--- FIXED Date Trace: Alert ${alertNumber} ---`);
+      console.log(`raw Excel value: ${rawDate}`);
+      console.log(`typeof raw value: ${typeof rawDate}`);
+      console.log(`parsed Date object: ${rowDate ? rowDate.toISOString() : 'N/A'}`);
+      console.log(`formatted yyyy-MM-dd string: ${rowDate ? format(rowDate, 'yyyy-MM-dd') : 'N/A'}`);
     }
     
     const rawRig = String(getValue(row, 'rig', 'rigname', 'facility', 'platform') || '');
@@ -457,12 +458,15 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       };
       
       const eventNoStr = String(getValue(row, 'eventno') || '');
-      if (eventNoStr === 'e76016' || eventNoStr === 'e76018') {
-        console.log(`\n--- Date Trace: Synthetic Event ${eventNoStr} (Event Parsing) ---`);
-        console.log(`Rig: ${normalizedRig}`);
-        console.log(`Category: ${normalizedCat}`);
-        console.log(`Date (dateObjStr from format): ${dateObjStr}`);
-        console.log(`Raw Parsed Date object: ${row['_parsedDate'] ? row['_parsedDate'].toISOString() : 'N/A'}`);
+      if (eventNoStr === 'e76016' || eventNoStr === 'e76018' || isSynthetic) {
+        if (eventNoStr === 'e76016' || eventNoStr === 'e76018') {
+          console.log(`\n--- FIXED Date Trace: Synthetic Event ${eventNoStr} ---`);
+          const rawDate = getValue(row, 'date');
+          console.log(`raw Excel value: ${rawDate}`);
+          console.log(`typeof raw value: ${typeof rawDate}`);
+          console.log(`parsed Date object: ${row['_parsedDate'] ? row['_parsedDate'].toISOString() : 'N/A'}`);
+          console.log(`formatted yyyy-MM-dd string: ${dateObjStr}`);
+        }
       }
       
       activeDepthSum = depth;
@@ -560,14 +564,6 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   let unmatchedAlertsPrinted = 0;
 
   for (const alert of parsedAlerts) {
-    if (alert.alertNumber === '860' || alert.alertNumber === '897') {
-      console.log(`\n--- Date Trace: Alert ${alert.alertNumber} (Before Matching Loop) ---`);
-      console.log(`Rig: ${alert.normalizedRig}`);
-      console.log(`Category: ${alert.normalizedCategory}`);
-      console.log(`Date Object: ${alert.date ? alert.date.toISOString() : 'N/A'}`);
-      console.log(`Date String used for matching: ${alert.date ? format(alert.date, 'yyyy-MM-dd') : 'null'}`);
-    }
-
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
     if (!alertDateStr) continue;
 
