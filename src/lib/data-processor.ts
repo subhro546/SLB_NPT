@@ -440,6 +440,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
         HasIntervention: false,
         GroupedEventCount: 1,
         OriginalRowCount: 1,
+        _isSynthetic: isSynthetic
       };
       activeDepthSum = depth;
     } else {
@@ -513,6 +514,7 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           HasIntervention: false,
           GroupedEventCount: 1,
           OriginalRowCount: 1,
+          _isSynthetic: isSynthetic
         };
         activeDepthSum = depth;
       }
@@ -532,17 +534,23 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
   // STEP 2: Secondary Matching with Alert Tracker
   const matchDiagnostics: any[] = [];
   
+  let unmatchedAlertsPrinted = 0;
+
   for (const alert of parsedAlerts) {
     const alertDateStr = alert.date ? format(alert.date, 'yyyy-MM-dd') : null;
     if (!alertDateStr) continue;
 
     let bestMatch: NPTRecord | null = null;
     let minDiff = Infinity;
+    const candidatesLog: any[] = [];
     
     for (const record of records) {
-      if (alert.normalizedRig === normalizeRigName(record.RigName) && 
-          alert.normalizedCategory === record.Category && 
-          alertDateStr === record.Month) {
+      const recRig = normalizeRigName(record.RigName);
+      const rigMatch = alert.normalizedRig === recRig;
+      const catMatch = alert.normalizedCategory === record.Category;
+      const dateMatch = alertDateStr === record.Month;
+      
+      if (rigMatch && catMatch && dateMatch) {
           
           let startTimeHour = parseTime(record.StartTime || '00:00');
           let endTimeHour = parseTime(record.EndTime || '00:00');
@@ -559,6 +567,20 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
           if (diff <= 12 && diff < minDiff) {
             minDiff = diff;
             bestMatch = record;
+          }
+      } else {
+          // Log if it's a synthetic candidate so we can debug why it failed
+          if ((record as any)._isSynthetic) {
+              candidatesLog.push({
+                 rig: record.RigName,
+                 recRig,
+                 cat: record.Category,
+                 date: record.Month,
+                 depth: record.Depth,
+                 rigMatch,
+                 catMatch,
+                 dateMatch
+              });
           }
       }
     }
@@ -585,6 +607,36 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       
       bestMatch.TimeSaved = bestMatch.Hours * improvementFactor;
       bestMatch.CostSaved = (bestMatch.TimeSaved / 24) * bestMatch.CostUSDPerDay;
+    } else {
+       if (unmatchedAlertsPrinted < 10) {
+           unmatchedAlertsPrinted++;
+           console.log(`\n--- UNMATCHED ALERT DEBUG (${unmatchedAlertsPrinted}/10) ---`);
+           console.log(`Alert ID: ${alert.alertNumber || 'Unknown'}`);
+           console.log(`Alert Rig: ${alert.normalizedRig}`);
+           console.log(`Alert Category: ${alert.normalizedCategory}`);
+           console.log(`Alert Date: ${alertDateStr}`);
+           
+           if (candidatesLog.length === 0) {
+              console.log(`No synthetic candidates found to compare against this alert.`);
+           }
+           
+           // Print all synthetic candidates to see exactly why they failed
+           for (const c of candidatesLog) {
+               console.log(`\nCandidate Event Rig: ${c.recRig}`);
+               console.log(`Rig comparison result: ${c.rigMatch}`);
+               console.log(`Candidate Category: ${c.cat}`);
+               console.log(`Category comparison result: ${c.catMatch}`);
+               console.log(`Candidate Date: ${c.date}`);
+               console.log(`Date comparison result: ${c.dateMatch}`);
+               console.log(`Alert Depth: N/A`);
+               console.log(`Candidate Depth: ${c.depth}`);
+               console.log(`Absolute depth difference: N/A`);
+               console.log(`Depth comparison result: N/A`);
+               
+               const reason = !c.dateMatch ? 'Date mismatch' : (!c.rigMatch ? 'Rig mismatch' : (!c.catMatch ? 'Category mismatch' : 'Unknown'));
+               console.log(`Rejected because: ${reason}`);
+           }
+       }
     }
   }
 
