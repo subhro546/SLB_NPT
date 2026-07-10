@@ -287,6 +287,8 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       alertNumber: String(getValue(row, 'alertno', 'alertnumber') || ''),
       observation: String(getValue(row, 'observation') || ''),
       recommendation: String(getValue(row, 'recommendation') || ''),
+      incharge: String(getValue(row, 'inchargename', 'incharge') || 'Unknown'),
+      engineer: String(getValue(row, 'monitoringengineer', 'engineer') || 'Unknown'),
       normalizedCategory: normalizeCategoryByCode(rawCde)
     };
   });
@@ -636,6 +638,14 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
       else if (minDiff <= 4) matchConfidence = "85%";
       bestMatch.MatchConfidence = matchConfidence;
       
+      // Override the Unknown values from the Activity row with the actual values from the Alert Tracker
+      if (alert.incharge && alert.incharge !== 'Unknown') {
+          bestMatch.InchargeName = alert.incharge;
+      }
+      if (alert.engineer && alert.engineer !== 'Unknown') {
+          bestMatch.MonitoringEngineer = alert.engineer;
+      }
+      
       let improvementFactor = 0.20 + (Math.random() * 0.30);
       bestMatch.ImprovementFactor = improvementFactor;
       
@@ -682,16 +692,18 @@ export function processDualFiles(activitiesData: string | ArrayBuffer, alertsDat
     const rawCols = Object.keys((records[0] as any)?.__raw_original_row || {}).join(', ');
     const uniqueWells = new Set(records.map(r => r.WellID));
     const uniqueAssets = new Set(records.map(r => r.Asset));
+    const alertRawCols = Object.keys(rawAlerts[0] || {}).join(', ');
     
     console.log(`\n--- DATA MAPPING DEBUG ---`);
-    console.log(`Detected Column Names (from first valid activity): ${rawCols}`);
+    console.log(`Detected Alert Tracker Columns: ${alertRawCols}`);
+    console.log(`Detected Activity Columns: ${rawCols}`);
     console.log(`Column mapped to Well Name: 'operationname', 'operation', 'wellname', 'wellid', 'well'`);
     console.log(`Column mapped to Asset: 'asset'`);
     console.log(`Number of unique Operation Names (Wells) found: ${uniqueWells.size}`);
     console.log(`Number of unique Assets found: ${uniqueAssets.size}`);
-    console.log(`First 10 parsed records after mapping (Well/Asset preview):`);
+    console.log(`First 10 parsed records after mapping (Well/Asset/Incharge/Engineer preview):`);
     records.slice(0, 10).forEach(r => {
-      console.log(`  Event ${r.EventNo} | Well: ${r.WellID} | Asset: ${r.Asset}`);
+      console.log(`  Event ${r.EventNo} | Well: ${r.WellID} | Asset: ${r.Asset} | Incharge: ${r.InchargeName} | Engineer: ${r.MonitoringEngineer}`);
     });
     console.log(`--------------------------\n`);
   }
